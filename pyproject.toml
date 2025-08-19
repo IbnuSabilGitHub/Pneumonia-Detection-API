@@ -1,0 +1,8 @@
+# FastAPI CLI configuration
+# This file tells FastAPI CLI how to run the application
+
+[tool.fastapi-cli]
+app = "main:app"
+host = "127.0.0.1"
+port = 8000
+reload = true
