@@ -1,0 +1,5 @@
+{
+  "mean": 0.4849735498428345,
+  "std": 0.24044059379196167,
+  "description": "Chest X-ray dataset normalization statistics computed during training"
+}

@@ -1,0 +1,19 @@
+# FastAPI Backend (Lightweight)
+fastapi
+uvicorn[standard]
+
+# ML Inference (CPU-Only for Railway)
+onnxruntime
+numpy
+pillow
+
+# Data Validation & Serialization
+pydantic
+python-multipart
+
+# Security & Rate Limiting
+slowapi
+redis
+
+# Optional: Logging & Monitoring
+python-json-logger
