@@ -1,54 +1,105 @@
-# Deteksi Pneumonia Menggunakan Gambar Rontgen Dada - API
-
+# Pneumonia Detection API - Refactored Architecture
 
 ## Description
-This API is configured to detect pneumonia from chest X-ray images using a machine learning model. It is designed for educational purposes, allowing users to experiment with image uploads and predictions.
-## 🎓 Overview
+FastAPI application for pneumonia detection from chest X-ray images using machine learning. This API features a clean modular architecture, comprehensive security measures, and educational tools for learning medical AI development.
 
-This is a **learning-focused** FastAPI application for pneumonia detection from chest X-ray images. It's designed for experimentation, learning, and educational purposes.
+## 🏗️ Architecture Overview
+
+This API has been completely refactored with a modern, scalable architecture:
+
+- **Dependency Injection**: Testable and maintainable service components  
+- **Security First**: Built-in rate limiting, validation, and security middleware
+- **Configuration Management**: Environment-based settings with type safety
+- **Comprehensive Logging**: Structured logging throughout the application
+- **API Documentation**: Auto-generated OpenAPI/Swagger documentation
 
 ## 🚀 Quick Start
 
 ### 1. Setup Environment
 ```bash
-cd backend
+# Clone and navigate to the project
+cd Pneumonia-Detection-API
+
+# Create virtual environment
 python -m venv .venv
-.venv\Scripts\activate  # Windows
+
+# Activate virtual environment
+# Windows:
+.venv\Scripts\activate
+# macOS/Linux:
+source .venv/bin/activate
+
+# Install dependencies
 pip install -r requirements.txt
 ```
 
-### 2. Configure Environment
+### 2. Configure Environment (Optional)
 ```bash
+# Create .env file for custom configuration
 cp .env.example .env
-# Edit .env if needed (defaults work for learning)
+# Edit .env file to override default settings
 ```
 
 ### 3. Run the Application
+
 ```bash
-python main.py
+# Method 1: Using FastAPI CLI (Recommended for development)
+fastapi dev main.py
+
+# Method 2: Using uvicorn directly with the refactored app
+python -m uvicorn app.main:app --host 127.0.0.1 --port 8000 --reload
+
 ```
 
-The API will be available at `http://localhost:8000`
+## Production Deployment
 
-## 📚 Educational Features
+For production, use:
 
-### ✅ **Simple & Accessible**
-- No complex authentication barriers
-- Easy to test and experiment with
-- Clear educational disclaimers
-- Comprehensive logging for learning
+```bash
+# Single worker
+python -m uvicorn app.main:app --host 0.0.0.0 --port 8000
 
-### ✅ **Essential Security (Learning-focused)**
-- **Rate Limiting**: 5 requests/minute per IP
-- **File Validation**: Size, type, and content checks
-- **Duplicate Detection**: Prevents spam uploads
-- **Request Monitoring**: Learn about API monitoring
+# Multiple workers (better performance)
+python -m uvicorn app.main:app --host 0.0.0.0 --port 8000 --workers 4
 
-### ✅ **Learning-friendly Endpoints**
-- `GET /` - Health check
-- `POST /pneumonia/predict` - Main prediction endpoint
-- `GET /docs` - Interactive API documentation
-- `GET /security/status` - Security monitoring
+```
+
+The API will be available at:
+- **Main API**: `http://127.0.0.1:8000` or `http://localhost:8000`
+- **Interactive Docs**: `http://127.0.0.1:8000/docs`
+- **Alternative Docs**: `http://127.0.0.1:8000/redoc`
+
+## 🏛️ Architecture Features
+
+### ✅ **Clean Architecture**
+- **Layered Design**: API → Services → Utils separation
+- **Dependency Injection**: Testable and maintainable components  
+- **Error Handling**: Structured exceptions and consistent error responses
+- **Configuration**: Environment-based settings with validation
+
+### ✅ **Security & Monitoring**
+- **Rate Limiting**: 5 requests/minute per IP with temporary blocking
+- **Input Validation**: File size, type, and medical image content checks
+- **Duplicate Detection**: SHA-256 hash-based duplicate prevention
+- **Request Logging**: Comprehensive logging with IP tracking
+- **Security Middleware**: Custom middleware for security and monitoring
+
+### ✅ **Developer Experience**
+- **API Documentation**: Auto-generated OpenAPI/Swagger at `/docs`
+- **Health Checks**: Service health monitoring at `/`
+- **Security Status**: Rate limiting and security info at `/security/status`
+- **Modular Code**: Clean, readable, and maintainable codebase
+
+## 🔗 API Endpoints
+
+| Method | Endpoint | Description | Rate Limit |
+|--------|----------|-------------|------------|
+| `GET` | `/` | Health check and service status | None |
+| `POST` | `/pneumonia/predict` | Pneumonia detection from X-ray | 5/min |
+| `GET` | `/pneumonia/model/info` | Model information and stats | None |
+| `GET` | `/security/status` | Security and rate limiting status | 10/min |
+| `GET` | `/docs` | Interactive API documentation | None |
+| `GET` | `/redoc` | Alternative API documentation | None |
 
 ## 🧪 Testing the API
 
@@ -63,6 +114,9 @@ curl -X POST "http://localhost:8000/pneumonia/predict" \
 
 # Check security status
 curl http://localhost:8000/security/status
+
+# Get model information
+curl http://localhost:8000/pneumonia/model/info
 ```
 
 ### Using Python
