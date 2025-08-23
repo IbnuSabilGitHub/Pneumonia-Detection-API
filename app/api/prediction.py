@@ -3,7 +3,7 @@ Pneumonia prediction API endpoints.
 """
 import io
 from datetime import datetime
-from fastapi import APIRouter, File, UploadFile, HTTPException, status, Request, Depends
+from fastapi import APIRouter, File, UploadFile, HTTPException, status, Request, Depends, Query
 from slowapi import Limiter
 from slowapi.util import get_remote_address
 
@@ -32,9 +32,37 @@ router = APIRouter()
 limiter = Limiter(key_func=get_remote_address)
 
 
-def get_prediction_service() -> PneumoniaPredictionService:
+def get_prediction_service(model: str = Query("standard", description="Choose model: standard or efficientnet_b0")) -> PneumoniaPredictionService:
     """Dependency to get prediction service instance."""
-    return getattr(get_prediction_service, '_service', None)
+    services = {
+        "standard": PneumoniaPredictionService(
+            model_path=settings.model_path,
+            stats_path=settings.model_stats_path
+        ),
+        "efficientnet_b0": PneumoniaPredictionService(
+            model_path=settings.model_path_efficientnet_b0,
+            stats_path=settings.model_stats_path_efficientnet_b0
+        )
+    }
+    service = services.get(model)
+    if not service:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Model '{model}' not found"
+        )
+    
+    # Load the model if not already loaded
+    if not service.is_loaded():
+        try:
+            service.load_model()
+        except Exception as e:
+            logger.error(f"Failed to load {model} model: {e}")
+            raise HTTPException(
+                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                detail=f"Failed to load {model} model"
+            )
+    
+    return service
 
 
 @router.post("/predict", response_model=PredictionResponse, tags=["Prediction"])
@@ -140,6 +168,7 @@ async def predict_pneumonia(
             f"File: {file.filename}, Hash: {file_hash[:8]}, "
             f"Size: {image_stats['size']}, "
             f"Result: {result['prediction']}, "
+            f"model: {result['model_type']}, "
             f"Confidence: {result['confidence']:.3f}"
         )
         

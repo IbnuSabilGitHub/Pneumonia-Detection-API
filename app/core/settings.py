@@ -33,8 +33,11 @@ class Settings(BaseSettings):
     allowed_extensions: List[str] = [".jpg", ".jpeg", ".png"]
     
     # Model
-    model_path: str = "models/pneumonia_model.onnx"
-    model_stats_path: str = "models/model_stats.json"
+    model_path: str = "models/pneumonia_model_standard.onnx"
+    model_stats_path: str = "models/model_stats_standard.json"
+    
+    model_path_efficientnet_b0: str = "models/pneumonia_model_efficientnet_b0.onnx"
+    model_stats_path_efficientnet_b0: str = "models/model_stats_efficientnet_b0.json"
     
     # Rate Limiting
     rate_limit_requests: int = 5
@@ -68,6 +71,7 @@ class ModelConfig:
     
     # Image preprocessing
     TARGET_SIZE = (192, 192)
+    TARGET_SIZE_B0 = (224, 224)
     CHANNELS = 1  # Grayscale
     
     # Normalization (fallback values)
