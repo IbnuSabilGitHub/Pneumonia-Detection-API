@@ -13,6 +13,10 @@ class PredictionResponse(BaseModel):
     probabilities: Dict[str, float] = Field(..., description="Class probabilities")
     medical_recommendation: str = Field(..., description="Medical recommendation based on prediction")
     model_version: str = Field(default="v1.0", description="Model version used for prediction")
+    model_type: str = Field(
+        ...,
+        description="Type of model used for prediction (standard or efficientnet_b0)"
+    )
     disclaimer: str = Field(
         default="This model is for educational purposes only. Consult a healthcare professional for medical advice.",
         description="Medical disclaimer"
@@ -29,6 +33,7 @@ class PredictionResponse(BaseModel):
                 },
                 "medical_recommendation": "✅ Normal results - maintain regular health checkups",
                 "model_version": "v1.0",
+                "model_type": "standard",
                 "disclaimer": "This model is for educational purposes only. Consult a healthcare professional for medical advice."
             }
         }

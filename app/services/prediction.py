@@ -34,6 +34,7 @@ class PneumoniaPredictionService:
         self.mean: float = model_config.DEFAULT_MEAN
         self.std: float = model_config.DEFAULT_STD
         self.label_map = model_config.LABEL_MAP
+        self.model_type: str =  self.model_path.split('model_')[-1].split('.')[0]
         
     def load_model(self) -> None:
         """Load the ONNX model and statistics."""
@@ -86,7 +87,8 @@ class PneumoniaPredictionService:
             Preprocessed image tensor
         """
         # Convert to grayscale and resize
-        image = image.convert("L").resize(model_config.TARGET_SIZE)
+        target_size = model_config.TARGET_SIZE if self.model_path == settings.model_path else model_config.TARGET_SIZE_B0
+        image = image.convert("L").resize(target_size)
         
         # Normalize to [0, 1]
         img_array = np.array(image, dtype=np.float32) / 255.0
@@ -170,7 +172,8 @@ class PneumoniaPredictionService:
                     "NORMAL": float(probs[0]),
                     "PNEUMONIA": float(probs[1])
                 },
-                "medical_recommendation": recommendation
+                "medical_recommendation": recommendation,
+                "model_type": self.model_type
             }
             
         except Exception as e:
