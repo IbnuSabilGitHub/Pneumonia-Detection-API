@@ -39,12 +39,21 @@ async def lifespan(app: FastAPI):
     # Startup
     logger.info(f"Starting {settings.app_name} v{settings.app_version}")
     
+    # Initialize with fallback mechanisms
+    startup_errors = []
+    
+    # Try to initialize prediction service
     try:
-        # Initialize prediction service
         prediction_service = PneumoniaPredictionService()
         prediction_service.load_model()
-        
-        # Initialize advanced rate limiter with Redis storage
+        logger.info("Prediction service initialized successfully")
+    except Exception as e:
+        logger.error(f"Failed to load model during startup: {e}")
+        startup_errors.append(f"Model loading failed: {e}")
+        prediction_service = None
+    
+    # Try to initialize rate limiter
+    try:
         storage_type = StorageType.REDIS if settings.storage_backend == "redis" else StorageType.MEMORY
         storage_config = settings.get_storage_config()
         
@@ -58,26 +67,30 @@ async def lifespan(app: FastAPI):
         if advanced_rate_limiter.storage:
             storage_info = await advanced_rate_limiter.storage.get_info()
             logger.info(f"Storage backend initialized: {storage_info}")
-        
-        # Inject services into route dependencies
-        health.get_prediction_service._service = prediction_service
-        prediction.get_prediction_service._service = prediction_service
-        
-        logger.info("Application startup completed successfully")
-        
-        yield
-        
-    except ModelLoadError as e:
-        logger.error(f"Failed to load model during startup: {e}")
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Model initialization failed"
-        )
+            
     except Exception as e:
-        logger.error(f"Unexpected error during startup: {e}")
-        raise
+        logger.warning(f"Rate limiter initialization failed, using fallback: {e}")
+        startup_errors.append(f"Rate limiter failed: {e}")
+        # Create a minimal fallback rate limiter
+        try:
+            advanced_rate_limiter = await create_advanced_rate_limiter(
+                storage_type=StorageType.MEMORY,
+                storage_config={"max_size": 1000}
+            )
+        except Exception as fallback_error:
+            logger.error(f"Fallback rate limiter also failed: {fallback_error}")
+            advanced_rate_limiter = None
     
-    # Shutdown
+    # Inject services into route dependencies (even if None)
+    health.get_prediction_service._service = prediction_service
+    prediction.get_prediction_service._service = prediction_service
+    
+    if startup_errors:
+        logger.warning(f"Application started with {len(startup_errors)} warnings: {startup_errors}")
+    else:
+        logger.info("Application startup completed successfully")
+    
+    yield
     logger.info("Application shutdown initiated")
     
     try:

@@ -28,6 +28,7 @@ def get_prediction_service() -> PneumoniaPredictionService:
 
 
 @router.get("/", response_model=HealthResponse, tags=["Health"])
+@router.get("/health", response_model=HealthResponse, tags=["Health"])
 async def health_check(
     prediction_service: PneumoniaPredictionService = Depends(get_prediction_service)
 ):
@@ -39,9 +40,19 @@ async def health_check(
     """
     uptime = time.time() - _start_time
     
+    # Determine health status
+    model_loaded = prediction_service.is_loaded() if prediction_service else False
+    
+    if prediction_service and model_loaded:
+        status = "healthy"
+    elif prediction_service and not model_loaded:
+        status = "partial"  # Service exists but model not loaded
+    else:
+        status = "partial"  # Service not available but app is running
+    
     return HealthResponse(
-        status="healthy" if prediction_service and prediction_service.is_loaded() else "unhealthy",
-        model_loaded=prediction_service.is_loaded() if prediction_service else False,
+        status=status,
+        model_loaded=model_loaded,
         version=settings.app_version,
         uptime=uptime
     )
