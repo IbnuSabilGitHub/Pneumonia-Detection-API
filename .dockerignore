@@ -1,0 +1,99 @@
+# Pneumonia Detection API v2.1.0 - Docker Ignore
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Virtual Environment
+.env
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Git
+.git/
+.gitignore
+.gitattributes
+
+# Documentation
+*.md
+!README.md
+doc/
+docs/
+
+# Testing
+test_*.py
+*_test.py
+tests/
+.pytest_cache/
+.coverage
+.nyc_output
+
+# Development files
+.env.example
+requirements_dev.txt
+pyproject.toml
+
+# Deployment
+Dockerfile
+.dockerignore
+docker-compose.yml
+railway.json
+Procfile
+
+# Logs
+logs/
+*.log
+
+# Temporary files
+tmp/
+temp/
+.tmp/
+
+# Attack test results
+ip_switching_attack_results_*.json
+data_user.json
+redis_ping_test.py
+test_*.py
+
+# Build artifacts
+deploy.sh
+DEPLOYMENT_GUIDE.md
