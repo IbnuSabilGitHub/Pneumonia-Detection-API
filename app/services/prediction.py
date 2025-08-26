@@ -34,7 +34,15 @@ class PneumoniaPredictionService:
         self.mean: float = model_config.DEFAULT_MEAN
         self.std: float = model_config.DEFAULT_STD
         self.label_map = model_config.LABEL_MAP
-        self.model_type: str =  self.model_path.split('model_')[-1].split('.')[0]
+        self.model_type: str = self._extract_model_type()
+        
+    def _extract_model_type(self) -> str:
+        """Extract model type from model path."""
+        try:
+            return self.model_path.split('model_')[-1].split('.')[0]
+        except (IndexError, AttributeError):
+            logger.warning("Could not extract model type from path, using 'unknown'")
+            return "unknown"
         
     def load_model(self) -> None:
         """Load the ONNX model and statistics."""
@@ -86,8 +94,10 @@ class PneumoniaPredictionService:
         Returns:
             Preprocessed image tensor
         """
+        # Determine target size based on model type
+        target_size = self._get_target_size()
+        
         # Convert to grayscale and resize
-        target_size = model_config.TARGET_SIZE if self.model_path == settings.model_path else model_config.TARGET_SIZE_B0
         image = image.convert("L").resize(target_size)
         
         # Normalize to [0, 1]
@@ -100,6 +110,12 @@ class PneumoniaPredictionService:
         img_tensor = img_array[np.newaxis, np.newaxis, :, :]
         
         return img_tensor
+    
+    def _get_target_size(self) -> tuple:
+        """Get target size based on model type."""
+        if "efficientnet_b0" in self.model_path.lower():
+            return model_config.TARGET_SIZE_B0
+        return model_config.TARGET_SIZE
     
     def _generate_medical_recommendation(
         self, 

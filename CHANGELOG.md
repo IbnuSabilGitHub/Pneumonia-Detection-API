@@ -1,6 +1,34 @@
 # Changelog
 
-## [1.1.0] - 2025-08-19 - Major Refactoring
+## [3.0.0] - 2025-08-25 - Code Quality & Security Improvements
+
+### 🔧 Code Refactoring
+- **IMPROVED**: Refactored `PneumoniaPredictionService` with extracted helper methods
+  - Added `_extract_model_type()` method for safer model type detection
+  - Added `_get_target_size()` method for cleaner preprocessing logic
+  - Enhanced error handling with proper fallback mechanisms
+- **IMPROVED**: Restructured `SecurityMiddleware` for better maintainability
+  - Extracted `_should_skip_rate_limiting()` for endpoint filtering
+  - Added `_extract_file_hash()` for cleaner file handling
+  - Created `_check_rate_limit()` for modular rate limiting logic
+  - Implemented `_create_rate_limit_response()` for consistent error responses
+
+### 🛡️ Security Enhancements
+- **ENHANCED**: Better rate limiting fallback handling
+- **IMPROVED**: More detailed error responses with security headers
+- **FIXED**: Proper exception propagation in middleware chain
+- **ADDED**: Enhanced logging for security events
+
+
+### 🔬 Testing & Quality
+- **IMPROVED**: Better error handling in all components
+- **ENHANCED**: Code readability and maintainability
+- **FIXED**: Potential edge cases in model type detection
+- **IMPROVED**: Middleware error recovery mechanisms
+
+---
+
+## [2.1.0] - 2025-08-19 - Major Refactoring
 
 ### 🏗️ Architecture Overhaul
 - **BREAKING**: Complete restructure from monolithic `main.py` to modular architecture

@@ -3,91 +3,14 @@ Security utilities and helpers.
 """
 import hashlib
 import time
-from typing import Dict, Any
+from typing import Dict
 from fastapi import Request
-from collections import defaultdict, deque
 
 from ..core.settings import settings
 from ..core.logger import get_logger
-from ..utils.exceptions import RateLimitError
 
 logger = get_logger(__name__)
 
-
-class InMemoryRateLimiter:
-    """In-memory rate limiter for development/simple deployments."""
-    
-    def __init__(self):
-        self.requests: Dict[str, deque] = defaultdict(deque)
-        self.blocked_ips: Dict[str, float] = {}
-    
-    def is_allowed(
-        self, 
-        client_ip: str, 
-        max_requests: int = None, 
-        window_seconds: int = None
-    ) -> bool:
-        """
-        Check if request is allowed based on rate limiting.
-        
-        Args:
-            client_ip: Client IP address
-            max_requests: Maximum requests allowed in window
-            window_seconds: Time window in seconds
-            
-        Returns:
-            True if request is allowed, False otherwise
-        """
-        max_requests = max_requests or settings.rate_limit_requests
-        window_seconds = window_seconds or settings.rate_limit_window
-        current_time = time.time()
-        
-        # Check if IP is temporarily blocked
-        if client_ip in self.blocked_ips:
-            if current_time < self.blocked_ips[client_ip]:
-                return False
-            else:
-                del self.blocked_ips[client_ip]
-        
-        # Clean old requests
-        requests = self.requests[client_ip]
-        while requests and requests[0] < current_time - window_seconds:
-            requests.popleft()
-        
-        # Check rate limit
-        if len(requests) >= max_requests:
-            # Block IP temporarily
-            self.blocked_ips[client_ip] = current_time + settings.rate_limit_block_duration
-            logger.warning(f"Rate limit exceeded for IP: {client_ip}")
-            return False
-        
-        # Add current request
-        requests.append(current_time)
-        return True
-    
-    def get_request_count(self, client_ip: str, window_seconds: int = None) -> int:
-        """Get current request count for an IP."""
-        window_seconds = window_seconds or settings.rate_limit_window
-        current_time = time.time()
-        
-        requests = self.requests[client_ip]
-        # Clean old requests
-        while requests and requests[0] < current_time - window_seconds:
-            requests.popleft()
-        
-        return len(requests)
-    
-    def is_blocked(self, client_ip: str) -> bool:
-        """Check if IP is currently blocked."""
-        if client_ip not in self.blocked_ips:
-            return False
-        
-        current_time = time.time()
-        if current_time >= self.blocked_ips[client_ip]:
-            del self.blocked_ips[client_ip]
-            return False
-        
-        return True
 
 
 class FileHashCache:
@@ -150,14 +73,14 @@ def get_client_ip(request: Request) -> str:
         Client IP address
     """
     # Check for forwarded headers (for proxies/load balancers)
-    forwarded_for = request.headers.get("X-Forwarded-For")
+    forwarded_for = request.headers.get("x-forwarded-for")
     if forwarded_for:
         return forwarded_for.split(",")[0].strip()
-    
-    real_ip = request.headers.get("X-Real-IP")
+        
+    real_ip = request.headers.get("x-real-ip")
     if real_ip:
-        return real_ip
-    
+        return real_ip.strip()
+        
     return request.client.host
 
 
@@ -175,5 +98,4 @@ def calculate_file_hash(contents: bytes) -> str:
 
 
 # Global instances
-rate_limiter = InMemoryRateLimiter()
 file_hash_cache = FileHashCache()

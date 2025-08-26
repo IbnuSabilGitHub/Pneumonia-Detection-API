@@ -21,7 +21,7 @@ except ImportError:
     app = FastAPI(
         title="Pneumonia Detection API",
         description="API for pneumonia detection from chest X-ray images",
-        version="2.0.0"
+        version="3.1.0"
     )
     
     @app.get("/")

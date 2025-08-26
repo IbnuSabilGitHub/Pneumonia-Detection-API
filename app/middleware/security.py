@@ -1,20 +1,20 @@
 """
-Custom middleware for security and logging.
+Custom middleware for security and logging with Redis storage support.
 """
 import time
 from fastapi import Request, HTTPException, status
 from fastapi.responses import JSONResponse
+from starlette.middleware.base import BaseHTTPMiddleware
 
 from ..core.logger import get_logger
-from ..utils.security import get_client_ip, rate_limiter
-from ..utils.exceptions import RateLimitError
+from ..utils.security import get_client_ip
+from ..core.advanced_rate_limiting import advanced_rate_limiter
 
 logger = get_logger(__name__)
 
-
-async def rate_limit_middleware(request: Request, call_next):
+class SecurityMiddleware(BaseHTTPMiddleware):
     """
-    Rate limiting middleware.
+    Advanced rate limiting middleware with Redis storage support.
     
     Args:
         request: FastAPI request object
@@ -23,24 +23,128 @@ async def rate_limit_middleware(request: Request, call_next):
     Returns:
         Response or raises HTTPException if rate limited
     """
-    # Skip rate limiting for health check and docs
-    if request.url.path in ["/", "/docs", "/redoc", "/openapi.json"]:
-        return await call_next(request)
+    def __init__(self, app):
+        super().__init__(app)
+        self.logger = get_logger(__name__)
+        
+        
+    async def dispatch(self, request, call_next):
+        start_time = time.time()
+        client_ip = get_client_ip(request)
+        endpoint = f"{request.method} {request.url.path}"
+        
+        # Skip rate limiting for excluded endpoints
+        if self._should_skip_rate_limiting(request.url.path):
+            return await call_next(request)
+        
+        # Extract file hash for upload endpoints
+        file_hash = self._extract_file_hash(request)
+        
+        # Check rate limiting
+        rate_limit_result = await self._check_rate_limit(
+            client_ip=client_ip,
+            endpoint=endpoint,
+            request=request,
+            file_hash=file_hash
+        )
+        
+        if not rate_limit_result["allowed"]:
+            return self._create_rate_limit_response(
+                rate_limit_result, client_ip, endpoint
+            )
+            
+        # Process the request
+        try:
+            response = await call_next(request)
+            
+            # Log successful request
+            process_time = time.time() - start_time
+            self.logger.info(
+                f"{endpoint} | IP: {client_ip} | "
+                f"Status: {response.status_code} | Time: {process_time:.3f}s"
+            )
+            
+            # Add security headers
+            response.headers["X-Content-Type-Options"] = "nosniff"
+            response.headers["X-Frame-Options"] = "DENY"
+            response.headers["X-XSS-Protection"] = "1; mode=block"
+            
+            return response
+            
+        except Exception as e:
+            self.logger.error(f"Request failed: {str(e)} | IP: {client_ip} | Endpoint: {endpoint}")
+            raise 
     
-    client_ip = get_client_ip(request)
+    def _should_skip_rate_limiting(self, path: str) -> bool:
+        """Check if endpoint should skip rate limiting."""
+        excluded_paths = ["/health", "/", "/docs", "/redoc", "/openapi.json"]
+        return path in excluded_paths
     
-    if not rate_limiter.is_allowed(client_ip):
-        logger.warning(f"Rate limit exceeded for IP: {client_ip}")
+    def _extract_file_hash(self, request) -> str:
+        """Extract file hash for upload endpoints."""
+        if request.url.path == "/pneumonia/predict" and request.method == "POST":
+            return getattr(request.state, 'file_hash', None)
+        return None
+    
+    async def _check_rate_limit(self, client_ip: str, endpoint: str, request, file_hash: str) -> dict:
+        """Check rate limiting and return result."""
+        # Check if rate limiter is available and has storage initialized
+        if advanced_rate_limiter is None:
+            self.logger.warning("Rate limiter not initialized, allowing request")
+            return {"allowed": True, "reason": "Rate limiter not initialized", "details": {}}
+            
+        try:
+            # Use async rate limiting if storage is initialized, otherwise fallback
+            if hasattr(advanced_rate_limiter, '_storage_initialized') and advanced_rate_limiter._storage_initialized:
+                # Advanced async rate limiting check
+                is_allowed, reason, details = await advanced_rate_limiter.is_request_allowed(
+                    client_ip=client_ip,
+                    endpoint=endpoint,
+                    request=request,
+                    file_hash=file_hash
+                )
+            else:
+                # Fallback to legacy sync method (with in-memory storage)
+                self.logger.debug("Using fallback rate limiting")
+                is_allowed, reason, details = True, "Fallback mode", {}
+            
+            return {
+                "allowed": is_allowed,
+                "reason": reason,
+                "details": details
+            }
+            
+        except Exception as e:
+            # If rate limiting fails, log error but allow request to proceed
+            self.logger.error(f"Rate limiting check failed: {e} | IP: {client_ip} | Allowing request")
+            return {"allowed": True, "reason": f"Rate limit check failed: {e}", "details": {}}
+    
+    def _create_rate_limit_response(self, rate_limit_result: dict, client_ip: str, endpoint: str):
+        """Create rate limit exceeded response."""
+        reason = rate_limit_result["reason"]
+        details = rate_limit_result["details"]
+        
+        self.logger.warning(f"Request blocked: {reason} | IP: {client_ip} | Endpoint: {endpoint} | Details: {details}")
+        
+        error_detail = {
+            "error": "Rate limit exceeded",
+            "message": reason,
+            "client_ip": client_ip,
+            "endpoint": endpoint,
+            "timestamp": time.time(),
+            "details": details
+        }
+        
         return JSONResponse(
             status_code=status.HTTP_429_TOO_MANY_REQUESTS,
-            content={
-                "detail": "Rate limit exceeded. Please try again later.",
-                "error_code": "RATE_LIMIT_EXCEEDED"
+            content=error_detail,
+            headers={
+                "Retry-After": "60",
+                "X-RateLimit-Limit": str(details.get("rate_limit", "unknown")),
+                "X-RateLimit-Remaining": "0",
+                "X-RateLimit-Reset": str(int(time.time() + 60))
             }
-        )
-    
-    response = await call_next(request)
-    return response
+        ) 
 
 
 async def logging_middleware(request: Request, call_next):

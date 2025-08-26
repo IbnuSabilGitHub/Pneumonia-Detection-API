@@ -1,4 +1,4 @@
-# Pneumonia Detection API - Refactored Architecture
+# Pneumonia Detection API 
 
 ## Description
 FastAPI application for pneumonia detection from chest X-ray images using machine learning. This API features a clean modular architecture, comprehensive security measures, and educational tools for learning medical AI development.

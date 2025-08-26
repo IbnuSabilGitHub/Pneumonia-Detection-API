@@ -1,8 +1,8 @@
-# Pneumonia Detection API - Architecture Documentation
+# Pneumonia Detection API - Architecture Documentation v3.1.0
 
 ## Overview
 
-The Pneumonia Detection API has been completely refactored to provide a scalable, maintainable, and clean architecture. This document outlines the new modular design and architectural decisions.
+The Pneumonia Detection API has been completely refactored to provide a scalable, maintainable, and clean architecture. This document outlines the new modular design and architectural decisions with the latest improvements from v3.1.0.
 
 ## Architecture Principles
 
@@ -10,48 +10,72 @@ The Pneumonia Detection API has been completely refactored to provide a scalable
 - **Dependency Injection**: Services are injected rather than globally instantiated
 - **Configuration Management**: Centralized settings with environment variable support
 - **Error Handling**: Structured exception handling with custom error types
+- **Code Quality**: Improved readability through method extraction and better structure
+- **Advanced Security**: Enhanced middleware with IP switching attack protection
 - **Logging**: Comprehensive logging throughout the application
 - **Security**: Built-in rate limiting, validation, and security middleware
 - **Testability**: Modular design enables easy unit testing
+
+## Recent Improvements (v3.1.0)
+
+### 🔧 Code Refactoring
+- **Extracted helper methods** in `PneumoniaPredictionService` for better maintainability
+- **Improved middleware structure** with clear separation of concerns in `SecurityMiddleware`
+- **Enhanced error handling** with proper exception propagation
+- **Better model type detection** with fallback mechanisms
+
+### 🛡️ Security Enhancements
+- **Refactored SecurityMiddleware** with modular rate limiting checks
+- **Improved request fingerprinting** for IP switching attack detection
+- **Enhanced error responses** with detailed security headers
+- **Better fallback handling** when rate limiter is unavailable
 
 ## Project Structure
 
 ```
 pneumonia-detection-api/
-├── app/                           # Main application package
-│   ├── __init__.py               # Package initialization
-│   ├── main.py                   # FastAPI application factory
-│   ├── core/                     # Core application components
+├── app/                                  # Main application package
+│   ├── __init__.py                       # Package initialization
+│   ├── main.py                           # FastAPI application factory
+│   ├── core/                             # Core application components
 │   │   ├── __init__.py
-│   │   ├── settings.py           # Configuration and settings
-│   │   └── logger.py             # Logging configuration
-│   ├── api/                      # API route handlers
+│   │   ├── advanced_rate_limiting.py     # Advanced rate limiting utilities
+│   │   ├── logger.py                     # Logging configuration
+│   │   ├── memory_storage.py             # In-memory storage backend implementation
+│   │   ├── redis_storage.py              # Redis storage backend 
+│   │   ├── settings.py                   # Configuration and settings
+│   │   ├── storage_backends.py           # Storage backend interface 
+│   │   └── storage_factory.py            # Creating different storage backends
+│   ├── api/                              # API route handlers
 │   │   ├── __init__.py
-│   │   ├── health.py             # Health check endpoints
-│   │   └── prediction.py         # Prediction endpoints
-│   ├── services/                 # Business logic layer
+│   │   ├── health.py                     # Health check endpoints
+│   │   ├── security.py                   # Security API endpoints.
+│   │   └── prediction.py                 # Prediction endpoints
+│   ├── services/                         # Business logic layer
 │   │   ├── __init__.py
-│   │   └── prediction.py         # ML prediction service
-│   ├── models/                   # Pydantic models
+│   │   └── prediction.py                 # ML prediction service
+│   ├── models/                           # Pydantic models
 │   │   ├── __init__.py
-│   │   └── schemas.py            # Request/response schemas
-│   ├── utils/                    # Utility functions
+│   │   └── schemas.py                    # Request/response schemas
+│   ├── utils/                            # Utility functions
 │   │   ├── __init__.py
-│   │   ├── exceptions.py         # Custom exceptions
-│   │   ├── security.py           # Security utilities
-│   │   └── validation.py         # Input validation
-│   └── middleware/               # Custom middleware
+│   │   ├── exceptions.py                 # Custom exceptions
+│   │   ├── security.py                   # Security utilities
+│   │   └── validation.py                 # Input validation
+│   └── middleware/                       # Custom middleware
 │       ├── __init__.py
-│       └── security.py           # Security middleware
-├── models/                       # ML model files
-│   ├── pneumonia_model.onnx      # ONNX model
-│   └── model_stats.json          # Model normalization stats
-├── main.py                       # Entry point for the Pneumonia Detection API.
-├── requirements.txt              # Python dependencies
-├── requirements_dev.txt          # Python dependencies for development
-├── Dockerfile                    # Container configuration
-├── .gitignore                    # Git ignore rules
-└── README.md                     # Project documentation
+│       └── security.py                   # Security middleware
+├── models/                               # ML model files
+│   ├── pneumonia_model.onnx              # ONNX model
+│   └── model_stats.json                  # Model normalization stats
+├── doc/                                  # Documentation files
+│   └── SECURITY-FEATURES.md 
+├── main.py                               # Entry point for the Pneumonia Detection API.
+├── requirements.txt                      # Python dependencies
+├── requirements_dev.txt                  # Python dependencies for development
+├── Dockerfile                            # Container configuration
+├── .gitignore                            # Git ignore rules
+└── README.md                             # Project documentation
 ```
 
 ## Layer Architecture

@@ -8,8 +8,6 @@ except ImportError:
     from pydantic import BaseSettings
     
 from typing import List, Optional
-from pathlib import Path
-import os
 
 
 class Settings(BaseSettings):
@@ -17,7 +15,7 @@ class Settings(BaseSettings):
     
     # Application
     app_name: str = "Pneumonia Detection API"
-    app_version: str = "2.0.0"
+    app_version: str = "3.1.0"
     debug: bool = False
     
     # Server
@@ -44,6 +42,32 @@ class Settings(BaseSettings):
     rate_limit_window: int = 60  # seconds
     rate_limit_block_duration: int = 300  # 5 minutes
     
+    # Advanced Rate Limiting
+    advanced_rate_limiting_enabled: bool = True
+    max_requests_per_ip: int = 10
+    max_fingerprint_requests: int = 3
+    ip_switching_threshold: int = 3
+    global_attack_threshold: float = 0.8
+    
+    # Storage Backend Configuration
+    storage_backend: str = "redis"  # Options: memory, redis, database
+    
+    # Redis Configuration
+    redis_host: str = "localhost"
+    redis_port: int = 6379
+    redis_password: Optional[str] = None
+    redis_db: int = 0
+    redis_url: Optional[str] = None
+    redis_max_connections: int = 50
+    redis_cluster_mode: bool = False
+    redis_cluster_nodes: Optional[str] = None  # JSON string of cluster nodes
+    redis_key_prefix: str = "pneumonia_api:rate_limit:"
+    
+    # In-Memory Storage Configuration (fallback)
+    memory_max_size: int = 10000
+    memory_cleanup_interval: int = 300
+    memory_default_ttl: int = 3600
+    
     # Cache
     cache_duration: int = 300  # 5 minutes
     
@@ -64,6 +88,41 @@ class Settings(BaseSettings):
         env_file = ".env"
         case_sensitive = False
         extra = "ignore"  # Ignore extra fields for flexibility
+    
+    def get_redis_config(self) -> dict:
+        """Get Redis configuration dictionary."""
+        import json
+        
+        cluster_nodes = None
+        if self.redis_cluster_nodes:
+            try:
+                cluster_nodes = json.loads(self.redis_cluster_nodes)
+            except (json.JSONDecodeError, TypeError):
+                cluster_nodes = None
+        
+        return {
+            "host": self.redis_host,
+            "port": self.redis_port,
+            "password": self.redis_password,
+            "db": self.redis_db,
+            "max_connections": self.redis_max_connections,
+            "cluster_mode": self.redis_cluster_mode,
+            "cluster_nodes": cluster_nodes,
+            "key_prefix": self.redis_key_prefix
+        }
+    
+    def get_storage_config(self) -> dict:
+        """Get storage backend configuration."""
+        if self.storage_backend == "redis":
+            return self.get_redis_config()
+        elif self.storage_backend == "memory":
+            return {
+                "max_size": self.memory_max_size,
+                "cleanup_interval": self.memory_cleanup_interval,
+                "default_ttl": self.memory_default_ttl
+            }
+        else:
+            return {}
 
 
 class ModelConfig:

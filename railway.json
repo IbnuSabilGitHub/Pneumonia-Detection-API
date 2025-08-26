@@ -8,6 +8,15 @@
     "healthcheckPath": "/health",
     "healthcheckTimeout": 300,
     "restartPolicyType": "ON_FAILURE",
-    "restartPolicyMaxRetries": 10
+    "restartPolicyMaxRetries": 3
+  },
+  "environments": {
+    "production": {
+      "variables": {
+        "APP_VERSION": "3.1.0",
+        "DEBUG": "false",
+        "STORAGE_BACKEND": "redis"
+      }
+    }
   }
 }

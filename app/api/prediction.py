@@ -2,12 +2,11 @@
 Pneumonia prediction API endpoints.
 """
 import io
-from datetime import datetime
 from fastapi import APIRouter, File, UploadFile, HTTPException, status, Request, Depends, Query
 from slowapi import Limiter
 from slowapi.util import get_remote_address
 
-from ..models.schemas import PredictionResponse, ErrorResponse
+from ..models.schemas import PredictionResponse
 from ..services.prediction import PneumoniaPredictionService
 from ..utils.security import get_client_ip, calculate_file_hash, file_hash_cache
 from ..utils.validation import (
