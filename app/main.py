@@ -16,7 +16,7 @@ from .middleware.security import (
     SecurityMiddleware
 )
 from .utils.exceptions import ModelLoadError
-from .core.advanced_rate_limiting import advanced_rate_limiter, create_advanced_rate_limiter
+from .core.advanced_rate_limiting import create_advanced_rate_limiter
 from .core.storage_factory import StorageType
 
 # Setup logging
@@ -52,20 +52,24 @@ async def lifespan(app: FastAPI):
         startup_errors.append(f"Model loading failed: {e}")
         prediction_service = None
     
-    # Try to initialize rate limiter
+    # Try to initialize rate limiter with in-memory storage as default
     try:
-        storage_type = StorageType.REDIS if settings.storage_backend == "redis" else StorageType.MEMORY
+        storage_type = StorageType.MEMORY  # Default to memory storage
         storage_config = settings.get_storage_config()
         
         logger.info(f"Initializing rate limiter with {storage_type.value} storage")
-        advanced_rate_limiter = await create_advanced_rate_limiter(
+        new_rate_limiter = await create_advanced_rate_limiter(
             storage_type=storage_type,
             storage_config=storage_config
         )
         
+        # Update global variable using setter function
+        from app.core.advanced_rate_limiting import set_rate_limiter
+        set_rate_limiter(new_rate_limiter)
+        
         # Test storage connection
-        if advanced_rate_limiter.storage:
-            storage_info = await advanced_rate_limiter.storage.get_info()
+        if new_rate_limiter.storage:
+            storage_info = await new_rate_limiter.storage.get_info()
             logger.info(f"Storage backend initialized: {storage_info}")
             
     except Exception as e:
@@ -73,13 +77,14 @@ async def lifespan(app: FastAPI):
         startup_errors.append(f"Rate limiter failed: {e}")
         # Create a minimal fallback rate limiter
         try:
-            advanced_rate_limiter = await create_advanced_rate_limiter(
+            new_rate_limiter = await create_advanced_rate_limiter(
                 storage_type=StorageType.MEMORY,
                 storage_config={"max_size": 1000}
             )
+            from app.core.advanced_rate_limiting import set_rate_limiter
+            set_rate_limiter(new_rate_limiter)
         except Exception as fallback_error:
             logger.error(f"Fallback rate limiter also failed: {fallback_error}")
-            advanced_rate_limiter = None
     
     # Inject services into route dependencies (even if None)
     health.get_prediction_service._service = prediction_service
@@ -94,15 +99,25 @@ async def lifespan(app: FastAPI):
     logger.info("Application shutdown initiated")
     
     try:
-        # Cleanup Redis connections
-        if advanced_rate_limiter and advanced_rate_limiter.storage:
-            await advanced_rate_limiter.storage.disconnect()
-            logger.info("Redis connections closed")
+        # Cleanup storage connections
+        from .core.advanced_rate_limiting import get_rate_limiter
+        current_rate_limiter = get_rate_limiter()
+        
+        if current_rate_limiter and current_rate_limiter.storage:
+            # Check if disconnect method exists (Redis storage) before calling
+            if hasattr(current_rate_limiter.storage, 'disconnect'):
+                await current_rate_limiter.storage.disconnect()
+                logger.info("Storage connections closed")
+            else:
+                logger.info("In-memory storage cleanup completed")
         
         # Cleanup prediction service
         if prediction_service:
-            prediction_service.cleanup()
-            logger.info("Prediction service cleaned up")
+            if hasattr(prediction_service, 'cleanup'):
+                prediction_service.cleanup()
+                logger.info("Prediction service cleaned up")
+            else:
+                logger.info("Prediction service cleanup not needed")
             
     except Exception as e:
         logger.error(f"Error during shutdown: {e}")

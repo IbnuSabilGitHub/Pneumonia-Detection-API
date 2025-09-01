@@ -1,5 +1,5 @@
 """
-Custom middleware for security and logging with Redis storage support.
+Custom middleware for security and logging with in-memory storage support.
 """
 import time
 from fastapi import Request, HTTPException, status
@@ -8,13 +8,12 @@ from starlette.middleware.base import BaseHTTPMiddleware
 
 from ..core.logger import get_logger
 from ..utils.security import get_client_ip
-from ..core.advanced_rate_limiting import advanced_rate_limiter
 
 logger = get_logger(__name__)
 
 class SecurityMiddleware(BaseHTTPMiddleware):
     """
-    Advanced rate limiting middleware with Redis storage support.
+    Advanced rate limiting middleware with in-memory storage support.
     
     Args:
         request: FastAPI request object
@@ -88,6 +87,10 @@ class SecurityMiddleware(BaseHTTPMiddleware):
     
     async def _check_rate_limit(self, client_ip: str, endpoint: str, request, file_hash: str) -> dict:
         """Check rate limiting and return result."""
+        # Import at runtime to get the latest reference
+        from ..core.advanced_rate_limiting import get_rate_limiter
+        advanced_rate_limiter = get_rate_limiter()
+        
         # Check if rate limiter is available and has storage initialized
         if advanced_rate_limiter is None:
             self.logger.warning("Rate limiter not initialized, allowing request")

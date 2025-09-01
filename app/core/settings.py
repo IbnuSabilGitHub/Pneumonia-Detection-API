@@ -15,7 +15,7 @@ class Settings(BaseSettings):
     
     # Application
     app_name: str = "Pneumonia Detection API"
-    app_version: str = "3.1.0"
+    app_version: str = "3.3.0"
     debug: bool = False
     
     # Server
@@ -50,9 +50,9 @@ class Settings(BaseSettings):
     global_attack_threshold: float = 0.8
     
     # Storage Backend Configuration
-    storage_backend: str = "redis"  # Options: memory, redis, database
+    storage_backend: str = "memory"  # Options: memory, redis, database
     
-    # Redis Configuration
+    # Redis Configuration (optional - for future use if needed)
     redis_host: str = "localhost"
     redis_port: int = 6379
     redis_password: Optional[str] = None

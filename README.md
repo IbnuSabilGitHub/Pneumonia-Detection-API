@@ -1,7 +1,7 @@
-# Pneumonia Detection API 
+# Pneumonia Detection API v3.3.0
 
 ## Description
-FastAPI application for pneumonia detection from chest X-ray images using machine learning. This API features a clean modular architecture, comprehensive security measures, and educational tools for learning medical AI development.
+FastAPI application for pneumonia detection from chest X-ray images using machine learning. This API features a clean modular architecture, comprehensive security measures, and optimized Railway deployment with reliable memory-based rate limiting.
 
 ## 🏗️ Architecture Overview
 
@@ -78,7 +78,7 @@ The API will be available at:
 - **Configuration**: Environment-based settings with validation
 
 ### ✅ **Security & Monitoring**
-- **Rate Limiting**: 5 requests/minute per IP with temporary blocking
+- **Rate Limiting**: 5 requests/minute per IP with in-memory storage
 - **Input Validation**: File size, type, and medical image content checks
 - **Duplicate Detection**: SHA-256 hash-based duplicate prevention
 - **Request Logging**: Comprehensive logging with IP tracking
@@ -160,7 +160,7 @@ print(response.json())
 
 | Feature | Purpose | Educational Value |
 |---------|---------|-------------------|
-| Rate Limiting | Prevent abuse | Learn about API throttling |
+| Rate Limiting | Prevent abuse | Learn about API throttling with in-memory storage |
 | File Validation | Security & performance | Input validation best practices |
 | Duplicate Detection | Efficiency | Caching and hash-based deduplication |
 | Request Logging | Monitoring | API observability and debugging |
@@ -182,7 +182,7 @@ Response:
   "is_blocked": false,
   "cache_entries": 3,
   "security_features": [
-    "Rate Limiting (5/min per IP)",
+    "Rate Limiting (5/min per IP with in-memory storage)",
     "File Size Validation (10MB max)",
     "File Type Validation (JPG, JPEG, PNG)",
     "Image Content Validation",
@@ -216,6 +216,7 @@ Response:
 4. **Testing** - Unit tests, integration tests
 5. **Deployment** - Docker, Railway, monitoring
 6. **Advanced Security** - HTTPS, CORS, headers
+7. **Redis Integration** - Scale with external Redis (optional)
 
 ## 🐛 Common Issues & Solutions
 

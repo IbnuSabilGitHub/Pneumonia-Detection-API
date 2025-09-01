@@ -13,9 +13,9 @@
   "environments": {
     "production": {
       "variables": {
-        "APP_VERSION": "3.1.0",
+        "APP_VERSION": "3.3.0",
         "DEBUG": "false",
-        "STORAGE_BACKEND": "redis"
+        "STORAGE_BACKEND": "memory"
       }
     }
   }

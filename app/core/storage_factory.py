@@ -1,6 +1,6 @@
 """
 Storage factory for creating different storage backends.
-Supports In-Memory, Redis, and Database backends.
+Supports In-Memory, Redis (optional), and Database backends.
 """
 import logging
 from typing import Dict, Any, Optional
@@ -8,7 +8,6 @@ from enum import Enum
 
 from .storage_backends import StorageBackend
 from .memory_storage import InMemoryStorageBackend
-from .redis_storage import RedisStorageBackend
 
 logger = logging.getLogger(__name__)
 
@@ -37,24 +36,32 @@ class StorageFactory:
             )
         
         elif storage_type == StorageType.REDIS:
-            redis_backend = RedisStorageBackend(
-                host=config.get("host", "localhost"),
-                port=config.get("port", 6379),
-                password=config.get("password"),
-                db=config.get("db", 0),
-                max_connections=config.get("max_connections", 50),
-                cluster_mode=config.get("cluster_mode", False),
-                cluster_nodes=config.get("cluster_nodes"),
-                key_prefix=config.get("key_prefix", "rate_limit:")
-            )
-            
-            # Connect to Redis
-            connected = await redis_backend.connect()
-            if not connected:
-                logger.warning("Failed to connect to Redis, falling back to in-memory storage")
+            try:
+                # Try to import Redis storage backend
+                from .redis_storage import RedisStorageBackend
+                
+                redis_backend = RedisStorageBackend(
+                    host=config.get("host", "localhost"),
+                    port=config.get("port", 6379),
+                    password=config.get("password"),
+                    db=config.get("db", 0),
+                    max_connections=config.get("max_connections", 50),
+                    cluster_mode=config.get("cluster_mode", False),
+                    cluster_nodes=config.get("cluster_nodes"),
+                    key_prefix=config.get("key_prefix", "rate_limit:")
+                )
+                
+                # Connect to Redis
+                connected = await redis_backend.connect()
+                if not connected:
+                    logger.warning("Failed to connect to Redis, falling back to in-memory storage")
+                    return InMemoryStorageBackend()
+                
+                return redis_backend
+                
+            except ImportError:
+                logger.warning("Redis library not available, falling back to in-memory storage")
                 return InMemoryStorageBackend()
-            
-            return redis_backend
         
         elif storage_type == StorageType.DATABASE:
             # Database backend implementation would go here

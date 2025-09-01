@@ -1,10 +1,10 @@
-# Pneumonia Detection API v3.1.0 - Deployment Guide
+# Pneumonia Detection API v3.3.0 - Deployment Guide
 
 ## 🚀 Deployment Summary
 
-**Version:** 3.1.0  
-**Release Date:** August 25, 2025  
-**Type:** Code Quality & Security Improvements
+**Version:** 3.3.0  
+**Release Date:** September 1, 2025  
+**Type:** Railway Production Optimization & Redis Configuration
 
 
 ## 🌐 Deployment Options
@@ -24,10 +24,10 @@ railway status
 ### Option 2: Docker
 ```bash
 # Build Docker image
-docker build -t pneumonia-api:v3.1.0 .
+docker build -t pneumonia-api:v3.3.0 .
 
 # Run container
-docker run -p 8000:8000 -e APP_VERSION=3.1.0 pneumonia-api:v3.1.0
+docker run -p 8000:8000 -e APP_VERSION=3.3.0 pneumonia-api:v3.3.0
 ```
 
 ### Option 3: Heroku
@@ -91,25 +91,32 @@ After deployment, verify the following endpoints:
 - **Code Readability**: Extracted helper methods for complex operations
 - **Maintainability**: Cleaner code structure for easier updates
 
+### Performance & Scalability
+- **In-Memory Storage**: Default rate limiting with in-memory storage for better performance
+- **Reduced Dependencies**: Removed Redis dependency for simpler deployment
+- **Memory Efficient**: Optimized memory usage with automatic cleanup
+- **Railway Optimized**: Perfect for Railway deployment constraints
+
 ### Security Enhancements
 - **Enhanced Middleware**: Better rate limiting with modular checks
-- **Improved Fallbacks**: Graceful handling when rate limiter is unavailable
+- **Improved Fallbacks**: Graceful handling when external services unavailable
 - **Better Logging**: Enhanced security event logging
 - **Response Headers**: Comprehensive security headers added
 
 ## 🚨 Important Notes
 
 1. **Environment Variables**: Ensure production environment has correct settings
-2. **Redis Configuration**: For production, configure Redis for rate limiting
+2. **Storage Configuration**: Uses in-memory storage by default for simplicity
 3. **Model Files**: Ensure ONNX model files are properly deployed
 4. **Health Checks**: Monitor the `/health` endpoint for service status
+5. **Redis (Optional)**: Can be enabled later for enhanced rate limiting if needed
 
 ## 🆘 Troubleshooting
 
 ### Common Issues
 1. **Import Errors**: Ensure all dependencies are installed
 2. **Model Loading**: Check model files are in the correct path
-3. **Rate Limiter**: Verify Redis connection in production
+3. **Rate Limiter**: Uses in-memory storage by default (no Redis required)
 4. **Port Issues**: Ensure the correct port is configured
 
 ### Support

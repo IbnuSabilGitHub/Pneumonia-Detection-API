@@ -5,7 +5,6 @@ from datetime import datetime
 from fastapi import APIRouter
 
 from ..core.logger import get_logger
-from ..core.advanced_rate_limiting import advanced_rate_limiter
 
 logger = get_logger(__name__)
 router = APIRouter()
@@ -14,11 +13,15 @@ router = APIRouter()
 @router.get("/status")
 async def get_security_status():
     """
-    Get enhanced security status with advanced protection info and Redis backend.
+    Get enhanced security status with advanced protection info and in-memory storage.
     
     Returns:
         Security status including active protections and statistics
     """
+    # Import at runtime to get the latest reference
+    from ..core.advanced_rate_limiting import get_rate_limiter
+    advanced_rate_limiter = get_rate_limiter()
+    
     if advanced_rate_limiter is None:
         return {
             "service": "Pneumonia Detection API",
@@ -43,14 +46,14 @@ async def get_security_status():
         "timestamp": datetime.now().isoformat(),
         "advanced_protection": status,
         "protection_features": [
-            "Multi-layer Rate Limiting (Redis)",
-            "IP Switching Attack Detection (Redis)", 
-            "Request Fingerprinting (Redis)",
-            "Behavioral Analysis (Redis)",
-            "Global Attack Scoring (Redis)",
-            "Duplicate File Detection (Redis)",
-            "Persistent Storage (Redis)",
-            "Multi-instance Support (Redis)"
+            "Multi-layer Rate Limiting (In-Memory)",
+            "IP Switching Attack Detection (In-Memory)", 
+            "Request Fingerprinting (In-Memory)",
+            "Behavioral Analysis (In-Memory)",
+            "Global Attack Scoring (In-Memory)",
+            "Duplicate File Detection (In-Memory)",
+            "Persistent Storage (In-Memory)",
+            "Single-instance Optimized (In-Memory)"
         ]
     }
 
@@ -58,11 +61,15 @@ async def get_security_status():
 @router.get("/stats")
 async def get_security_stats():
     """
-    Get detailed security statistics with Redis backend support.
+    Get detailed security statistics with in-memory storage support.
     
     Returns:
         Detailed security statistics and metrics
     """
+    # Import at runtime to get the latest reference
+    from ..core.advanced_rate_limiting import get_rate_limiter
+    advanced_rate_limiter = get_rate_limiter()
+    
     if advanced_rate_limiter is None:
         return {
             "error": "Rate limiter not initialized",

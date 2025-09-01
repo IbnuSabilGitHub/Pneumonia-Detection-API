@@ -614,5 +614,14 @@ async def create_advanced_rate_limiter(
     
     return limiter
 
-# Global instance (will be initialized with Redis in startup)
+# Global instance (will be initialized in startup)
 advanced_rate_limiter: Optional[AdvancedRateLimiter] = None
+
+def get_rate_limiter() -> Optional[AdvancedRateLimiter]:
+    """Get the current rate limiter instance."""
+    return advanced_rate_limiter
+
+def set_rate_limiter(limiter: AdvancedRateLimiter) -> None:
+    """Set the global rate limiter instance."""
+    global advanced_rate_limiter
+    advanced_rate_limiter = limiter
