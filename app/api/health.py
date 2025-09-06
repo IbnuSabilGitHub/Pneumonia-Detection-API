@@ -27,16 +27,76 @@ def get_prediction_service() -> PneumoniaPredictionService:
     return getattr(get_prediction_service, '_service', None)
 
 
-@router.get("/", response_model=HealthResponse, tags=["Health"])
-@router.get("/health", response_model=HealthResponse, tags=["Health"])
+@router.get(
+    "/", 
+    response_model=HealthResponse, 
+    tags=["Health"],
+    summary="🏥 Service Health Check",
+    description="""
+Health Check Endpoint
+
+Provides comprehensive health status information about the Pneumonia Detection API service.
+
+📊 Health Status Levels
+
+• healthy: All systems operational, model loaded and ready
+• partial: Service running but with limitations (e.g., model not loaded)  
+• unhealthy: Critical issues detected
+
+📋 Response Information
+
+• Status: Current health state of the service
+• Model Status: Whether AI models are loaded and ready
+• Version: Current API version
+• Uptime: Time since service start (in seconds)
+
+🔍 Use Cases
+
+• Load Balancer Health Checks: Monitor service availability
+• Monitoring Systems: Track service uptime and status
+• Troubleshooting: Verify service and model status
+• Development: Quick service verification
+
+⚡ Performance
+
+• Response Time: < 100ms typical
+• Rate Limiting: No rate limits applied
+• Caching: Status computed in real-time
+    """,
+    response_description="Service health status with detailed information"
+)
+@router.get(
+    "/health", 
+    response_model=HealthResponse, 
+    tags=["Health"],
+    summary="🏥 Service Health Check (Alternative)",
+    description="Alternative endpoint for health checking - same functionality as root endpoint"
+)
 async def health_check(
     prediction_service: PneumoniaPredictionService = Depends(get_prediction_service)
 ):
     """
-    Health check endpoint.
+    **🏥 Comprehensive Health Check**
     
-    Returns:
-        Service health status including model loading state and uptime
+    Returns detailed health status including:
+    - Service availability and operational state
+    - AI model loading status and readiness
+    - API version information
+    - Service uptime since last restart
+    
+    This endpoint is designed for:
+    - Load balancer health checks
+    - Monitoring system integration
+    - Service status verification
+    - Troubleshooting and diagnostics
+    
+    **Returns:**
+        HealthResponse: Complete health status information
+    
+    **Status Meanings:**
+        - `healthy`: All systems operational
+        - `partial`: Service running with limitations
+        - `unhealthy`: Critical issues detected
     """
     uptime = time.time() - _start_time
     

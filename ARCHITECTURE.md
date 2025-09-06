@@ -1,8 +1,8 @@
-# Pneumonia Detection API - Architecture Documentation v3.3.0
+# Pneumonia Detection API - Architecture Documentation v3.4.2
 
 ## Overview
 
-The Pneumonia Detection API has been completely refactored to provide a scalable, maintainable, and clean architecture. This document outlines the new modular design and architectural decisions with the latest improvements from v3.3.0, including Railway production optimization and enhanced rate limiting fallbacks.
+The Pneumonia Detection API has been completely refactored to provide a scalable, maintainable, and clean architecture. This document outlines the new modular design and architectural decisions with the latest improvements from v3.4.2, including comprehensive API documentation enhancement and Railway production optimization.
 
 ## Architecture Principles
 

@@ -136,32 +136,136 @@ def create_app() -> FastAPI:
         lifespan=lifespan,
         title=settings.app_name,
         description="""
-        Medical AI API for chest X-ray pneumonia detection.
-        
-        **⚠️ Important Disclaimer:**
-        This API is designed for educational and research purposes only.
-        The predictions should never be used as a substitute for professional 
-        medical diagnosis or treatment. Always consult qualified healthcare 
-        professionals for medical advice.
-        
-        **Features:**
-        - AI-powered pneumonia detection from chest X-rays
-        - Confidence scoring and probability distributions
-        - Medical recommendations based on predictions
-        - Built-in security features and rate limiting
-        - Comprehensive input validation
-        
-        **Security:**
-        - Rate limiting (5 requests/minute per IP)
-        - File size and type validation
-        - Image content validation
-        - Duplicate detection
-        - Request logging and monitoring
-        """,
+<h2>🏥 Medical AI API for Chest X-ray Pneumonia Detection</h2>
+
+<h3>⚠️ <strong>Important Medical Disclaimer</strong></h3>
+
+<p><strong>This API is designed for educational and research purposes only.</strong></p>
+
+<p>The predictions provided by this system should <strong>NEVER</strong> be used as a substitute for professional medical diagnosis or treatment. Always consult qualified healthcare professionals for medical advice, diagnosis, or treatment decisions.</p>
+
+<hr>
+
+<h3>🚀 <strong>Key Features</strong></h3>
+
+<ul>
+<li><strong>🤖 AI-Powered Detection</strong>: Advanced deep learning models for pneumonia detection</li>
+<li><strong>📊 Confidence Scoring</strong>: Detailed probability distributions and confidence levels</li>
+<li><strong>💡 Smart Recommendations</strong>: Medical recommendations based on AI predictions</li>
+<li><strong>🔒 Enterprise Security</strong>: Multi-layer security with advanced rate limiting</li>
+<li><strong>✅ Input Validation</strong>: Comprehensive file and image validation</li>
+<li><strong>📈 Real-time Monitoring</strong>: Request logging and performance tracking</li>
+</ul>
+
+<h3>🔧 <strong>Available Models</strong></h3>
+
+<ol>
+<li><strong>Standard Model</strong> (<code>standard</code>): Baseline CNN architecture</li>
+<li><strong>EfficientNet-B0</strong> (<code>efficientnet_b0</code>): Advanced transfer learning model</li>
+</ol>
+
+<h3>🛡️ <strong>Security Features</strong></h3>
+
+<ul>
+<li><strong>Rate Limiting</strong>: 5 requests per minute per IP address</li>
+<li><strong>File Validation</strong>: Size (max 10MB) and type (JPG, JPEG, PNG) validation</li>
+<li><strong>Content Analysis</strong>: AI-powered image content validation</li>
+<li><strong>Duplicate Detection</strong>: Prevents repeated uploads of identical images</li>
+<li><strong>Request Monitoring</strong>: Comprehensive logging and attack detection</li>
+<li><strong>IP Protection</strong>: Multi-layer IP-based security measures</li>
+</ul>
+
+<h3>📋 <strong>Supported File Formats</strong></h3>
+
+<ul>
+<li><strong>JPEG/JPG</strong>: Recommended for medical images</li>
+<li><strong>PNG</strong>: High quality lossless format</li>
+<li><strong>Maximum Size</strong>: 10MB per file</li>
+</ul>
+
+<h3>🎯 <strong>API Usage Examples</strong></h3>
+
+<h4>Basic Prediction Request:</h4>
+<pre><code>curl -X POST "http://localhost:8000/pneumonia/predict" \\
+     -H "Content-Type: multipart/form-data" \\
+     -F "file=@chest_xray.jpg"</code></pre>
+
+<h4>Using Specific Model:</h4>
+<pre><code>curl -X POST "http://localhost:8000/pneumonia/predict?model=efficientnet_b0" \\
+     -H "Content-Type: multipart/form-data" \\
+     -F "file=@chest_xray.jpg"</code></pre>
+
+<h3>📊 <strong>Response Format</strong></h3>
+
+<p>All prediction responses include:</p>
+<ul>
+<li><strong>Prediction</strong>: NORMAL or PNEUMONIA classification</li>
+<li><strong>Confidence</strong>: Numerical confidence score (0.0-1.0)</li>
+<li><strong>Probabilities</strong>: Individual class probabilities</li>
+<li><strong>Medical Recommendation</strong>: Contextual medical guidance</li>
+<li><strong>Model Information</strong>: Version and type used for prediction</li>
+</ul>
+
+<h3>🔍 <strong>Monitoring Endpoints</strong></h3>
+
+<ul>
+<li><strong>Health Check</strong>: <code>/</code> or <code>/health</code> - Service status and uptime</li>
+<li><strong>Model Info</strong>: <code>/pneumonia/model/info</code> - Detailed model information</li>
+<li><strong>Security Status</strong>: <code>/security/status</code> - Security system status</li>
+<li><strong>Security Stats</strong>: <code>/security/stats</code> - Detailed security metrics</li>
+</ul>
+
+<h3>📚 <strong>Documentation</strong></h3>
+
+<ul>
+<li><strong>Interactive API Docs</strong>: <code>/docs</code> (Swagger UI)</li>
+<li><strong>Alternative Docs</strong>: <code>/redoc</code> (ReDoc)</li>
+</ul>
+
+<hr>
+
+<p><strong>Built with FastAPI</strong> | <strong>Powered by ONNX</strong>
+""",
         version=settings.app_version,
         docs_url="/docs",
         redoc_url="/redoc",
-        debug=settings.debug
+        debug=settings.debug,
+        contact={
+            "name": "Pneumonia Detection API",
+            "url": "https://github.com/IbnuSabilGitHub/Pneumonia-Detection-API",
+        },
+        license_info={
+            "name": "MIT License",
+            "url": "https://opensource.org/licenses/MIT",
+        },
+        servers=[
+            {
+                "url": "http://localhost:8000",
+                "description": "Development server"
+            },
+            {
+                "url": "https://your-production-domain.com",
+                "description": "Production server"
+            }
+        ],
+        openapi_tags=[
+            {
+                "name": "Health",
+                "description": "Health check and monitoring endpoints for service status"
+            },
+            {
+                "name": "Pneumonia Detection",
+                "description": "AI-powered pneumonia detection from chest X-ray images"
+            },
+            {
+                "name": "Model",
+                "description": "Machine learning model information and statistics"
+            },
+            {
+                "name": "Security",
+                "description": "Security status and protection metrics"
+            }
+        ]
     )
     
     # Add rate limiter for slowapi compatibility
@@ -190,18 +294,10 @@ def create_app() -> FastAPI:
     app.middleware("http")(logging_middleware)
     app.add_middleware(SecurityMiddleware)
     
-    # Include routers
+    # Include routers (avoid passing tags here to prevent duplicates in /redoc)
     app.include_router(health.router)
-    app.include_router(
-        prediction.router, 
-        prefix="/pneumonia", 
-        tags=["Pneumonia Detection"]
-    )
-    app.include_router(
-        security.router,
-        prefix="/security",
-        tags=["Security"]
-    )
+    app.include_router(prediction.router, prefix="/pneumonia")
+    app.include_router(security.router, prefix="/security")
     
     # Global exception handlers
     @app.exception_handler(413)

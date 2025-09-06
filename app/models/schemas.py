@@ -6,30 +6,73 @@ from typing import Dict, Optional
 
 
 class PredictionResponse(BaseModel):
-    """Response model for pneumonia prediction."""
+    """
+    **🔬 AI Pneumonia Detection Response**
     
-    prediction: str = Field(..., description="Predicted class (NORMAL or PNEUMONIA)")
-    confidence: float = Field(..., ge=0.0, le=1.0, description="Prediction confidence score ")
-    probabilities: Dict[str, float] = Field(..., description="Class probabilities")
-    medical_recommendation: str = Field(..., description="Medical recommendation based on prediction")
-    model_version: str = Field(default="v1.0", description="Model version used for prediction")
+    Comprehensive response model containing AI analysis results, confidence metrics,
+    and medical recommendations for chest X-ray pneumonia detection.
+    
+    **Fields:**
+    - **prediction**: Primary AI classification result
+    - **confidence**: Numerical confidence level (0.0-1.0)
+    - **probabilities**: Detailed class probability breakdown
+    - **medical_recommendation**: Contextual medical guidance
+    - **model_version**: AI model version identifier
+    - **model_type**: Specific model architecture used
+    - **disclaimer**: Important medical disclaimer text
+    
+    **Medical Disclaimer:**
+    All predictions are for educational/research purposes only.
+    Never use as substitute for professional medical diagnosis.
+    """
+    
+    prediction: str = Field(
+        ..., 
+        description="🎯 AI classification result",
+        example="NORMAL",
+        pattern="^(NORMAL|PNEUMONIA)$"
+    )
+    confidence: float = Field(
+        ..., 
+        ge=0.0, 
+        le=1.0, 
+        description="📊 AI confidence score (0.0=uncertain, 1.0=highly confident)",
+        example=0.92
+    )
+    probabilities: Dict[str, float] = Field(
+        ..., 
+        description="📈 Individual class probabilities breakdown",
+        example={"NORMAL": 0.92, "PNEUMONIA": 0.08}
+    )
+    medical_recommendation: str = Field(
+        ..., 
+        description="💡 Contextual medical guidance based on AI results",
+        example="✅ Normal results - maintain regular health checkups"
+    )
+    model_version: str = Field(
+        default="v1.0", 
+        description="🤖 AI model version used for analysis",
+        example="v1.0"
+    )
     model_type: str = Field(
         ...,
-        description="Type of model used for prediction (standard or efficientnet_b0)"
+        description="🧠 Specific AI model architecture (standard or efficientnet_b0)",
+        example="standard",
+        pattern="^(standard|efficientnet_b0)$"
     )
     disclaimer: str = Field(
         default="This model is for educational purposes only. Consult a healthcare professional for medical advice.",
-        description="Medical disclaimer"
+        description="⚠️ Important medical disclaimer",
     )
     
     class Config:
         json_schema_extra = {
             "example": {
                 "prediction": "NORMAL",
-                "confidence": 0.87,
+                "confidence": 0.92,
                 "probabilities": {
-                    "NORMAL": 0.87,
-                    "PNEUMONIA": 0.13
+                    "NORMAL": 0.92,
+                    "PNEUMONIA": 0.08
                 },
                 "medical_recommendation": "✅ Normal results - maintain regular health checkups",
                 "model_version": "v1.0",
@@ -40,12 +83,46 @@ class PredictionResponse(BaseModel):
 
 
 class HealthResponse(BaseModel):
-    """Response model for health check endpoint."""
+    """
+    **🏥 Service Health Status Response**
     
-    status: str = Field(..., description="Service health status")
-    model_loaded: bool = Field(..., description="Whether the ML model is loaded")
-    version: str = Field(..., description="API version")
-    uptime: Optional[float] = Field(None, description="Service uptime in seconds")
+    Comprehensive health check response providing detailed information about
+    API service status, model availability, and system uptime.
+    
+    **Health Status Levels:**
+    - **healthy**: All systems operational, models loaded
+    - **partial**: Service running with limitations
+    - **unhealthy**: Critical issues detected
+    
+    **Fields:**
+    - **status**: Overall service health indicator
+    - **model_loaded**: AI model availability status
+    - **version**: Current API version
+    - **uptime**: Service runtime in seconds
+    """
+    
+    status: str = Field(
+        ..., 
+        description="🚦 Overall service health status",
+        example="healthy",
+        pattern="^(healthy|partial|unhealthy)$"
+    )
+    model_loaded: bool = Field(
+        ..., 
+        description="🤖 AI model loading and readiness status",
+        example=True
+    )
+    version: str = Field(
+        ..., 
+        description="📌 Current API version identifier",
+        example="1.0.0"
+    )
+    uptime: Optional[float] = Field(
+        None, 
+        description="⏱️ Service uptime since last restart (seconds)",
+        example=3600.5,
+        ge=0.0
+    )
     
     class Config:
         json_schema_extra = {

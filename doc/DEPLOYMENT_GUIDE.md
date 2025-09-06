@@ -1,10 +1,10 @@
-# Pneumonia Detection API v3.3.0 - Deployment Guide
+# Pneumonia Detection API v3.4.2 - Deployment Guide
 
 ## 🚀 Deployment Summary
 
-**Version:** 3.3.0  
-**Release Date:** September 1, 2025  
-**Type:** Railway Production Optimization & Redis Configuration
+**Version:** 3.4.2  
+**Release Date:** September 6, 2025  
+**Type:** Comprehensive API Documentation Enhancement & Railway Production Optimization
 
 
 ## 🌐 Deployment Options
@@ -24,10 +24,10 @@ railway status
 ### Option 2: Docker
 ```bash
 # Build Docker image
-docker build -t pneumonia-api:v3.3.0 .
+docker build -t pneumonia-api:v3.4.2 .
 
 # Run container
-docker run -p 8000:8000 -e APP_VERSION=3.3.0 pneumonia-api:v3.3.0
+docker run -p 8000:8000 -e APP_VERSION=3.4.2 pneumonia-api:v3.4.2
 ```
 
 ### Option 3: Heroku

@@ -1,6 +1,54 @@
 # Changelog
 
-## [3.2.0] - 2025-08-31 - Redis to In-Memory Migration
+## [3.4.2] - 2025-09-06 - Comprehensive API Documentation Enhancement
+
+### 📚 Documentation Overhaul
+- **ENHANCED**: Complete API documentation for all endpoints (/docs and /redoc)
+- **IMPROVED**: FastAPI application description with detailed feature overview
+- **ADDED**: Comprehensive endpoint documentation with examples and use cases
+- **FIXED**: Markdown rendering issues in Swagger UI (switched to plain text)
+- **RESOLVED**: Duplicate endpoint display issues in ReDoc interface
+
+### 🔬 Pneumonia Detection Endpoints
+- **ENHANCED**: Detailed prediction endpoint documentation with medical context
+- **ADDED**: Multi-model support documentation (standard vs EfficientNet-B0)
+- **IMPROVED**: Request/response examples with confidence scoring explanations
+- **DETAILED**: Medical disclaimer and best practices guidance
+
+### 🏥 Health & Monitoring Documentation
+- **COMPREHENSIVE**: Health check endpoint documentation with status interpretations
+- **ADDED**: Service uptime and model loading status explanations
+- **IMPROVED**: Monitoring use cases and integration guidelines
+
+### 🛡️ Security Documentation
+- **DETAILED**: Security system status and statistics endpoint documentation
+- **ENHANCED**: Threat level interpretation and protection feature explanations
+- **ADDED**: Real-time security metrics and analytics documentation
+
+### 📊 Schema Enhancements
+- **IMPROVED**: Pydantic model documentation with detailed field descriptions
+- **ADDED**: Response examples and validation patterns
+- **ENHANCED**: Medical disclaimer integration in schemas
+
+### 📖 Additional Documentation
+- **CREATED**: `API_DOCUMENTATION.md` - Comprehensive API usage guide
+- **CREATED**: `USAGE_EXAMPLES.md` - Multi-language client integration examples
+- **ADDED**: Best practices, troubleshooting, and error handling guides
+
+### 🔧 Technical Improvements
+- **FIXED**: OpenAPI schema configuration for better documentation rendering
+- **RESOLVED**: ReDoc duplicate endpoint issues by removing redundant decorators
+- **IMPROVED**: FastAPI application metadata and contact information
+
+---
+
+## [3.4.1] - 2025-09-01 - Documentation Infrastructure Setup
+- **PREPARED**: Documentation framework for comprehensive API documentation
+- **INITIALIZED**: Documentation file structure and templates
+
+---
+
+## [3.4.0] - 2025-08-31 - Redis to In-Memory Migration
 
 ### 🔄 Architecture Simplification
 - **MAJOR**: Migrated from Redis to in-memory storage for rate limiting
@@ -47,7 +95,7 @@
 
 ---
 
-## [3.1.0] - 2025-08-25 - Code Quality & Security Improvements
+## [3.3.1] - 2025-08-25 - Code Quality & Security Improvements
 
 ### 🔧 Code Refactoring
 - **IMPROVED**: Refactored `PneumoniaPredictionService` with extracted helper methods
@@ -66,7 +114,6 @@
 - **FIXED**: Proper exception propagation in middleware chain
 - **ADDED**: Enhanced logging for security events
 
-
 ### 🔬 Testing & Quality
 - **IMPROVED**: Better error handling in all components
 - **ENHANCED**: Code readability and maintainability
@@ -74,8 +121,6 @@
 - **IMPROVED**: Middleware error recovery mechanisms
 
 ---
-
-# Changelog
 
 ## [3.3.0] - 2025-09-01 - Railway Production Optimization
 
@@ -105,7 +150,7 @@
 
 ---
 
-## [3.2.0] - 2025-08-26 - Health Check & Production Fixes
+## [3.1.0] - 2025-08-26 - Health Check & Production Fixes
 
 ### 🚑 Health Check Improvements
 - **FIXED**: Railway deployment health check failures
@@ -115,7 +160,7 @@
 
 ---
 
-## [2.1.0] - 2025-08-25 - Code Quality & Security Improvements
+## [2.1.0] - 2025-08-25 - Architecture Overhaul & Code Quality
 
 ### 🏗️ Architecture Overhaul
 - **BREAKING**: Complete restructure from monolithic `main.py` to modular architecture

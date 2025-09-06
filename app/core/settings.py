@@ -15,7 +15,7 @@ class Settings(BaseSettings):
     
     # Application
     app_name: str = "Pneumonia Detection API"
-    app_version: str = "3.3.0"
+    app_version: str = "3.4.2"
     debug: bool = False
     
     # Server
