@@ -199,6 +199,8 @@ Solution: Multi-layer protection with dynamic scoring
 - Layer 5: Behavioral analysis (timing variance, duplicate file across IPs)
 - Layer 6: Global attack scoring (request rate, unique IPs, blocked fingerprints) driving stricter temporary limits
 
+Note: The advanced rate limiting module has been refactored into `app.core.rate_limiting` with a backward-compatible shim at `app.core.advanced_rate_limiting`. See `doc/RATE_LIMITING_REFACTOR.md` for details.
+
 Default thresholds (tunable):
 ```python
 WINDOW_SIZE = 60                      # seconds
