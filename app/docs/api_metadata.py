@@ -1,7 +1,7 @@
 from typing import Dict, Any
-from .settings import settings
+from ..core.settings import settings
 
-class APIDocTemplate:
+class APIMetadata:
     """Manages API documentation and metadata."""
     
     @staticmethod

@@ -4,11 +4,11 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.trustedhost import TrustedHostMiddleware
 from fastapi.responses import JSONResponse
 from .core.middleware_factory import MiddlewareFactory
-from .core.api_doc_template import APIDocTemplate
+from .docs.api_metadata import APIMetadata
 from .core.settings import settings
 from .core.logger import setup_logging, get_logger
 from .services.prediction import PneumoniaPredictionService
-from .api import health, prediction, security
+from .api import health, prediction, security_status
 from .middleware.security import (
     logging_middleware,
     error_handling_middleware,
@@ -98,7 +98,7 @@ def create_app() -> FastAPI:
         Configured FastAPI application instance
     """
     # Get app metadata from template
-    app_metadata = APIDocTemplate.get_app_metadata()
+    app_metadata = APIMetadata.get_app_metadata()
     
     # create FastAPi metadata from template
     app = FastAPI(lifespan=lifespan, **app_metadata)
@@ -109,7 +109,7 @@ def create_app() -> FastAPI:
     # Include routers
     app.include_router(health.router)
     app.include_router(prediction.router, prefix="/pneumonia")
-    app.include_router(security.router, prefix="/security")
+    app.include_router(security_status.router, prefix="/security")
     
     # Setup global exception handlers
     _setup_exception_handlers(app)
