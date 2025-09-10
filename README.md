@@ -1,258 +1,515 @@
-# Pneumonia Detection API v3.3.0
+# 🏥 Pneumonia Detection API
 
-## Description
-FastAPI application for pneumonia detection from chest X-ray images using machine learning. This API features a clean modular architecture, comprehensive security measures, and optimized Railway deployment with reliable memory-based rate limiting.
+Advanced AI powered medical imaging analysis service for detecting pneumonia from chest X-ray images. Built with FastAPI, powered by ONNX, and secured with a multi layer, production grade protection system.
 
-## 🏗️ Architecture Overview
 
-This API has been completely refactored with a modern, scalable architecture:
+---
 
-- **Dependency Injection**: Testable and maintainable service components  
-- **Security First**: Built-in rate limiting, validation, and security middleware
-- **Configuration Management**: Environment-based settings with type safety
-- **Comprehensive Logging**: Structured logging throughout the application
-- **API Documentation**: Auto-generated OpenAPI/Swagger documentation
+## ⚠️ Medical Disclaimer
 
-## 🚀 Quick Start
+This API is for educational and research purposes only. Predictions must **NEVER** be used as a substitute for professional medical diagnosis or treatment. Always consult qualified healthcare professionals for medical advice.
 
-### 1. Setup Environment
+---
+
+## 📚 Table of Contents
+
+1. Overview
+2. Key Features
+3. Architecture
+4. Quick Start
+5. API Endpoints
+6. Security & Rate Limiting
+7. Configuration
+8. Deployment
+9. Usage Examples
+10. Monitoring & Alerting
+11. Testing & Quality
+12. Migration: Redis → In-Memory
+13. Performance & Benchmarks
+14. Troubleshooting
+15. References
+16. Changelog (Summary)
+
+---
+
+## 🌟 Overview
+
+The Pneumonia Detection API provides AI inference for chest X-ray images using deep learning (Standard CNN, EfficientNet-B0). It includes enterprise grade security with advanced rate limiting, request fingerprinting, IP switching detection, behavioral analysis, and global attack scoring all optimized for single-instance deployments (e.g., Railway) using in-memory storage by default.
+
+---
+
+## 🚀 Key Features
+
+- AI-Powered Detection
+  - Models: Standard CNN and EfficientNet-B0
+  - Confidence scoring and class probabilities
+  - Medical recommendations included in responses
+
+- Security & Protection
+  - Multi-layer advanced rate limiting
+  - Request fingerprinting
+  - IP switching attack detection
+  - Behavioral analysis and file-duplication detection
+  - Global attack scoring with dynamic limits
+  - Comprehensive security status endpoints
+
+- Operational Excellence
+  - Modular, maintainable architecture
+  - In-memory storage default (Redis optional)
+  - Rich API documentation and examples
+  - Optimized for Railway and Docker
+
+---
+
+## 🏗️ Architecture
+
+Clean, modular architecture with clear separation of concerns and production-grade patterns.
+
+Project structure:
+```
+pneumonia-detection-api/
+├── app/
+│   ├── main.py                         # FastAPI application factory
+│   ├── api/                            # API routes
+│   │   ├── health.py
+│   │   ├── prediction.py
+│   │   └── security.py
+│   ├── services/                       # Business logic
+│   │   └── prediction.py
+│   ├── models/                         # Pydantic schemas
+│   ├── core/                           # Core & infrastructure
+│   │   ├── advanced_rate_limiting.py
+│   │   ├── memory_storage.py
+│   │   ├── redis_storage.py            # Optional
+│   │   ├── storage_factory.py
+│   │   ├── storage_backends.py
+│   │   ├── settings.py
+│   │   └── logger.py
+│   ├── middleware/
+│   │   └── security.py
+│   └── utils/
+│       ├── exceptions.py
+│       ├── security.py
+│       └── validation.py
+├── models/                             # ONNX model files
+├── Dockerfile
+├── requirements.txt
+└── README.md
+```
+
+Recent improvements:
+- Refactored middleware and services for maintainability
+- Strong error handling and graceful fallbacks
+- In-memory default storage with optional Redis support
+- Enhanced API docs and schema clarity
+
+---
+
+## ⚡ Quick Start
+
+Clone, install, and run:
+
 ```bash
-# Clone and navigate to the project
+git clone https://github.com/IbnuSabilGitHub/Pneumonia-Detection-API.git
 cd Pneumonia-Detection-API
 
-# Create virtual environment
 python -m venv .venv
+. .venv/bin/activate  # Linux/Mac
+# .venv\Scripts\activate  # Windows
 
-# Activate virtual environment
-# Windows:
-.venv\Scripts\activate
-# macOS/Linux:
-source .venv/bin/activate
-
-# Install dependencies
 pip install -r requirements.txt
+
+python main.py  # or: uvicorn app.main:app --reload
 ```
 
-### 2. Configure Environment (Optional)
-```bash
-# Create .env file for custom configuration
-cp .env.example .env
-# Edit .env file to override default settings
+Base URL
+```
+http://localhost:8000
 ```
 
-### 3. Run the Application
-
+Health Check
 ```bash
-# Method 1: Using FastAPI CLI (Recommended for development)
-fastapi dev main.py
-
-# Method 2: Using uvicorn directly with the refactored app
-python -m uvicorn app.main:app --host 127.0.0.1 --port 8000 --reload
-
+curl -X GET "http://localhost:8000/health"
 ```
 
-## Production Deployment
-
-For production, use:
-
+Basic Prediction
 ```bash
-# Single worker
-python -m uvicorn app.main:app --host 0.0.0.0 --port 8000
-
-# Multiple workers (better performance)
-python -m uvicorn app.main:app --host 0.0.0.0 --port 8000 --workers 4
-
-```
-
-The API will be available at:
-- **Main API**: `http://127.0.0.1:8000` or `http://localhost:8000`
-- **Interactive Docs**: `http://127.0.0.1:8000/docs`
-- **Alternative Docs**: `http://127.0.0.1:8000/redoc`
-
-## 🏛️ Architecture Features
-
-### ✅ **Clean Architecture**
-- **Layered Design**: API → Services → Utils separation
-- **Dependency Injection**: Testable and maintainable components  
-- **Error Handling**: Structured exceptions and consistent error responses
-- **Configuration**: Environment-based settings with validation
-
-### ✅ **Security & Monitoring**
-- **Rate Limiting**: 5 requests/minute per IP with in-memory storage
-- **Input Validation**: File size, type, and medical image content checks
-- **Duplicate Detection**: SHA-256 hash-based duplicate prevention
-- **Request Logging**: Comprehensive logging with IP tracking
-- **Security Middleware**: Custom middleware for security and monitoring
-
-### ✅ **Developer Experience**
-- **API Documentation**: Auto-generated OpenAPI/Swagger at `/docs`
-- **Health Checks**: Service health monitoring at `/`
-- **Security Status**: Rate limiting and security info at `/security/status`
-- **Modular Code**: Clean, readable, and maintainable codebase
-
-## 🔗 API Endpoints
-
-| Method | Endpoint | Description | Rate Limit |
-|--------|----------|-------------|------------|
-| `GET` | `/` | Health check and service status | None |
-| `POST` | `/pneumonia/predict` | Pneumonia detection from X-ray | 5/min |
-| `GET` | `/pneumonia/model/info` | Model information and stats | None |
-| `GET` | `/security/status` | Security and rate limiting status | 10/min |
-| `GET` | `/docs` | Interactive API documentation | None |
-| `GET` | `/redoc` | Alternative API documentation | None |
-
-## 🧪 Testing the API
-
-### Using cURL
-```bash
-# Test health check
-curl http://localhost:8000/
-
-# Upload chest X-ray for prediction
 curl -X POST "http://localhost:8000/pneumonia/predict" \
-  -F "file=@sample_xray.jpg"
-
-# Check security status
-curl http://localhost:8000/security/status
-
-# Get model information
-curl http://localhost:8000/pneumonia/model/info
+     -H "Content-Type: multipart/form-data" \
+     -F "file=@chest_xray.jpg"
 ```
 
-### Using Python
-```python
-import requests
+---
 
-# Test prediction
-with open('chest_xray.jpg', 'rb') as f:
-    response = requests.post(
-        'http://localhost:8000/pneumonia/predict',
-        files={'file': f}
-    )
-    
-print(response.json())
-```
+## 📡 API Endpoints
 
-### Using Postman
-1. Set method to `POST`
-2. URL: `http://localhost:8000/pneumonia/predict`
-3. Body: form-data
-4. Key: `file` (type: File)
-5. Value: Select your chest X-ray image
+Health & Monitoring
+- GET / or GET /health
+  - Returns: { status: healthy|partial|unhealthy, model_loaded, version, uptime }
 
-## 📊 Response Format
+Security
+- GET /security/status
+  - Real-time protection status and metrics
+- GET /security/stats
+  - Detailed analytics and interpretation
 
+Pneumonia Detection
+- POST /pneumonia/predict
+  - Params: file (JPG/JPEG/PNG, max 10MB), model=standard|efficientnet_b0
+  - Returns: prediction, confidence, probabilities, recommendation, model info, disclaimer
+- GET /pneumonia/model/info
+  - Params: model=standard|efficientnet_b0
+  - Returns: model metadata (architecture, input shape, performance)
+
+Example Response (Predict):
 ```json
 {
-  "prediction": "PNEUMONIA",
-  "confidence": 0.89,
-  "probabilities": {
-    "NORMAL": 0.11,
-    "PNEUMONIA": 0.89
-  },
-  "medical_recommendation": "⚠️ Medical consultation strongly recommended",
+  "prediction": "NORMAL",
+  "confidence": 0.92,
+  "probabilities": { "NORMAL": 0.92, "PNEUMONIA": 0.08 },
+  "medical_recommendation": "✅ Normal results - maintain regular health checkups",
   "model_version": "v1.0",
+  "model_type": "efficientnet_b0",
   "disclaimer": "This model is for educational purposes only. Consult a healthcare professional for medical advice."
 }
 ```
 
-## 🛡️ Security Features (Educational)
+Common Error Responses
+- 400 INVALID_FILE_FORMAT, INVALID_IMAGE_CONTENT
+- 409 DUPLICATE_FILE
+- 413 FILE_TOO_LARGE
+- 429 RATE_LIMIT_EXCEEDED
+- 503 SERVICE_UNAVAILABLE
 
-| Feature | Purpose | Educational Value |
-|---------|---------|-------------------|
-| Rate Limiting | Prevent abuse | Learn about API throttling with in-memory storage |
-| File Validation | Security & performance | Input validation best practices |
-| Duplicate Detection | Efficiency | Caching and hash-based deduplication |
-| Request Logging | Monitoring | API observability and debugging |
-| IP Tracking | Audit trail | User activity monitoring |
+---
 
-## 🔍 Monitoring & Debugging
+## 🛡️ Security & Rate Limiting
 
-### Check Security Status
-```bash
-curl http://localhost:8000/security/status
+Why advanced rate limiting?
+- Traditional IP-only limits are easy to bypass (VPNs/proxies)
+- No browser fingerprint detection
+- No behavioral analysis
+- No distributed attack detection
+
+Solution: Multi-layer protection with dynamic scoring
+- Layer 1: Fingerprint block check
+- Layer 2: IP rate limiting
+- Layer 3: Fingerprint rate limiting
+- Layer 4: IP switching detection (same fingerprint across many IPs, distributed bursts)
+- Layer 5: Behavioral analysis (timing variance, duplicate file across IPs)
+- Layer 6: Global attack scoring (request rate, unique IPs, blocked fingerprints) driving stricter temporary limits
+
+Default thresholds (tunable):
+```python
+WINDOW_SIZE = 60                      # seconds
+MAX_REQUESTS_PER_IP = 5               # per minute
+MAX_FINGERPRINT_REQUESTS = 2          # per minute
+IP_SWITCHING_THRESHOLD = 3            # same fingerprint from 3+ IPs
+GLOBAL_ATTACK_THRESHOLD = 0.6
+ATTACK_BLOCK_DURATION = 300           # seconds
+BOT_BEHAVIOR_VARIANCE = 0.1
 ```
 
-Response:
+What’s protected
+- POST /pneumonia/predict: full protection
+- Security endpoints & health: generally unthrottled or relaxed limits
+
+Security headers (examples)
+```
+X-Content-Type-Options: nosniff
+X-Frame-Options: DENY
+X-XSS-Protection: 1; mode=block
+X-RateLimit-Limit: 5
+X-RateLimit-Remaining: 3
+X-RateLimit-Reset: 1625097600
+Retry-After: 60
+```
+
+---
+
+## ⚙️ Configuration
+
+Environment Variables (common)
+```
+# App
+APP_VERSION=3.4.2
+DEBUG=false
+
+# Storage (default: memory)
+STORAGE_BACKEND=memory   # memory | redis
+
+# In-Memory Storage
+MEMORY_MAX_SIZE=10000
+MEMORY_CLEANUP_INTERVAL=300
+MEMORY_DEFAULT_TTL=3600
+
+# Rate Limiting
+RATE_LIMIT_REQUESTS=5
+RATE_LIMIT_WINDOW=60
+RATE_LIMIT_BLOCK_DURATION=300
+
+# Advanced Protection
+ADVANCED_RATE_LIMITING_ENABLED=true
+MAX_FINGERPRINT_REQUESTS=2
+ATTACK_SCORE_THRESHOLD=0.6
+IP_SWITCH_THRESHOLD=3
+
+# Redis (optional / production)
+REDIS_URL=redis://localhost:6379
+REDIS_PASSWORD=your_secure_password
+REDIS_DB=0
+REDIS_MAX_CONNECTIONS=20
+
+# CORS / Hosts
+TRUSTED_HOSTS=*.railway.app,localhost,127.0.0.1
+CORS_ORIGINS=*
+```
+
+High-Security preset
+```
+RATE_LIMIT_REQUESTS=3
+MAX_FINGERPRINT_REQUESTS=1
+ATTACK_SCORE_THRESHOLD=0.4
+IP_SWITCH_THRESHOLD=2
+```
+
+---
+
+## 🌐 Deployment
+
+Option 1: Railway (Recommended)
+```bash
+railway login
+railway up
+railway status
+```
+
+Option 2: Docker
+```bash
+docker build -t pneumonia-api:v3.4.2 .
+docker run -p 8000:8000 -e APP_VERSION=3.4.2 pneumonia-api:v3.4.2
+```
+
+Option 3: Heroku
+```bash
+heroku login
+heroku create your-app-name
+git push heroku main
+```
+
+Option 4: Local Development
+```bash
+# Windows
+.\.venv\Scripts\Activate.ps1
+# Linux/Mac
+# source .venv/bin/activate
+
+pip install -r requirements.txt
+python main.py
+```
+
+Post-deployment verification
+- GET /health → status, model_loaded, version, uptime
+- GET /security/status → active, metrics
+- GET /docs → interactive docs
+- GET /pneumonia/model/info → model stats
+
+---
+
+## 🔧 Usage Examples
+
+cURL
+```bash
+# Health
+curl -X GET "http://localhost:8000/health"
+
+# Predict (standard)
+curl -X POST "http://localhost:8000/pneumonia/predict" \
+  -H "Content-Type: multipart/form-data" \
+  -F "file=@chest_xray.jpg"
+
+# Predict (EfficientNet-B0)
+curl -X POST "http://localhost:8000/pneumonia/predict?model=efficientnet_b0" \
+  -H "Content-Type: multipart/form-data" \
+  -F "file=@chest_xray.jpg"
+
+# Model info
+curl -X GET "http://localhost:8000/pneumonia/model/info?model=standard"
+
+# Security status
+curl -X GET "http://localhost:8000/security/status"
+```
+
+Python (requests)
+```python
+import requests
+with open("chest_xray.jpg", "rb") as f:
+    r = requests.post(
+        "http://localhost:8000/pneumonia/predict",
+        files={"file": ("chest_xray.jpg", f, "image/jpeg")},
+        params={"model": "efficientnet_b0"},
+        timeout=30
+    )
+print(r.status_code, r.json())
+```
+
+Node.js (axios)
+```javascript
+const axios = require("axios");
+const FormData = require("form-data");
+const fs = require("fs");
+
+(async () => {
+  const form = new FormData();
+  form.append("file", fs.createReadStream("chest_xray.jpg"));
+  const res = await axios.post(
+    "http://localhost:8000/pneumonia/predict?model=standard",
+    form,
+    { headers: form.getHeaders() }
+  );
+  console.log(res.data);
+})();
+```
+
+More examples: Python async, Browser fetch, Java, C#, PHP available in USAGE_EXAMPLES.
+
+---
+
+## 📊 Monitoring & Alerting
+
+Key metrics
+- Requests per minute, success rate, response times
+- Global attack score, blocked requests, unique IP count
+- Memory/CPU usage, cache hit rate
+
+Suggested alert thresholds
+- Attack Score: warn > 0.7, critical > 0.9
+- Blocked Rate: warn > 20%, critical > 50%
+- Unique IPs/min: warn > 10, critical > 20
+- Response Time: warn > 100ms, critical > 500ms
+
+Security status sample
 ```json
 {
-  "client_ip": "127.0.0.1",
-  "requests_in_last_minute": 2,
-  "rate_limit": "5 requests per minute",
-  "is_blocked": false,
-  "cache_entries": 3,
-  "security_features": [
-    "Rate Limiting (5/min per IP with in-memory storage)",
-    "File Size Validation (10MB max)",
-    "File Type Validation (JPG, JPEG, PNG)",
-    "Image Content Validation",
-    "Duplicate Detection (5min cache)",
-    "Request Logging with IP tracking",
-    "Educational/Learning Mode (No Auth Required)"
-  ]
+  "service": "Pneumonia Detection API",
+  "security_status": "active",
+  "advanced_protection": {
+    "global_attack_score": 0.15,
+    "requests_per_minute": 23,
+    "recent_unique_ips": 8,
+    "blocked_fingerprints": 2,
+    "storage_type": "memory"
+  }
 }
 ```
 
-## ⚠️ Important Educational Notes
+---
 
-### 🎯 **This is for Learning Only**
-- Model is not clinically validated
-- Results should not be used for medical decisions
-- Always include appropriate disclaimers
-- Focus on technical learning aspects
+## 🧪 Testing & Quality
 
-### 🔧 **Development Best Practices Demonstrated**
-- Input validation and sanitization
-- Rate limiting and abuse prevention
-- Error handling and logging
-- API documentation and testing
-- Security monitoring
-- Clean code structure
+Available test scripts (examples)
+- test_rate_limiting.py
+- test_concurrent_rate_limiting.py
+- test_file_upload_rate_limiting.py
+- test_rate_limit_recovery.py
+- test_ip_switching_attack.py
+- run_all_rate_limit_tests.py
 
-### 📈 **Next Steps for Learning**
-1. **Add Authentication** - Learn OAuth2, JWT
-2. **Database Integration** - Store results, user data
-3. **Async Processing** - Background tasks, queues
-4. **Testing** - Unit tests, integration tests
-5. **Deployment** - Docker, Railway, monitoring
-6. **Advanced Security** - HTTPS, CORS, headers
-7. **Redis Integration** - Scale with external Redis (optional)
+Advanced protection expected results (sample)
+- Overall Security Score: ~83.3/100 (Excellent)
+- Fingerprint Detection: 100%
+- IP Switching Protection: ~58.3%
+- Basic Rate Limiting: Working
 
-## 🐛 Common Issues & Solutions
+Final verification checklist
+- Application starts successfully
+- Rate limiter initializes properly (in-memory)
+- All endpoints functional (/health, /docs, /security/status)
+- Performance optimized (low overhead)
+- Error handling robust
 
-### Rate Limit Hit
-- Wait 1 minute and try again
-- Check `/security/status` for current status
-- Each IP gets 5 requests per minute
+---
 
-### File Upload Errors
-- Ensure file is JPG, JPEG, or PNG
-- Maximum file size: 10MB
-- File should be a chest X-ray image
+## 🔄 Migration: Redis → In-Memory
 
-### Connection Issues
-- Ensure server is running on `localhost:8000`
-- Check firewall settings
-- Verify virtual environment is activated
+Why migrate?
+- Simpler deployment (single service)
+- Lower memory and latency
+- Perfect for Railway and education
+- Zero external dependencies
 
-## 📝 Logs Location
+What changed
+- Default storage_backend: redis → memory
+- Optional Redis dependency
+- Storage factory supports graceful fallback
+- Updated docs, deployment, and tests
 
-Application logs show:
-- Request details (IP, file info)
-- Prediction results
-- Security events (rate limits, blocks)
-- Error information for debugging
+Performance improvements
+- Memory: ~80MB → ~30MB (−62.5%)
+- Response overhead: +2–5ms → +0.1ms (−95%)
+- Startup: 2–5s → <1s (−80%)
+- Dependencies: 15 → 10 (−33%)
 
-Perfect for learning how to monitor and debug APIs!
+When to use Redis again
+- >1000 concurrent users
+- Multi-instance behind a load balancer
+- Need persistence across restarts
+- Advanced analytics and distributed rate limiting
 
-## 🤝 Contributing to Learning
+How to re-enable Redis
+```
+# requirements.txt
+redis>=5.0.0
 
-This educational API demonstrates:
-- Modern FastAPI development
-- Security best practices (simplified)
-- ML model serving
-- API documentation
-- Error handling
-- Monitoring and observability
+# env
+STORAGE_BACKEND=redis
+REDIS_URL=redis://your-redis:6379
+REDIS_PASSWORD=****
+```
 
-Feel free to experiment, modify, and extend for your learning purposes! 🎉
+---
+
+## 📈 Performance & Benchmarks
+
+In-memory backend
+- Total memory: ~20–30MB
+- Overhead: ~0.1ms/request
+- Response time increase: ~2%
+- Startup time: <1s
+
+Advanced detection accuracy
+- Overall: ~83.3/100
+- Layers: IP switching, fingerprinting, behavior analysis, global scoring
+
+---
+
+## 🛠️ Troubleshooting
+
+Common issues
+- Invalid file: Ensure JPG/JPEG/PNG; max 10MB; valid X-ray content
+- Rate limit 429: Implement backoff; space out requests; monitor headers
+- Slow responses: Reduce image size; choose Standard model; check CPU/memory
+- Model not loading: Verify ONNX files; ONNX Runtime installed; check logs
+
+Debug tips
+```bash
+curl http://localhost:8000/health | jq
+curl http://localhost:8000/security/status | jq
+tail -f logs/security.log | grep "BLOCKED\|ATTACK"
+```
+
+False positives/negatives
+- Tune thresholds (increase/decrease limits)
+- Consider whitelisting legitimate patterns
+- Review blocked fingerprints weekly; analyze attack patterns monthly
+
+---
+
+## 🔗 References
+
+- OWASP Rate Limiting Guide: https://owasp.org/www-community/controls/Blocking_Brute_Force_Attacks
+- RFC 6585 - HTTP 429: https://tools.ietf.org/html/rfc6585
+- Cloudflare Rate Limiting: https://developers.cloudflare.com/fundamentals/api/get-started/requests-per-minute
+- NIST Cybersecurity Framework: https://www.nist.gov/cyberframework
+
+Built with FastAPI | Powered by ONNX | Secured by Design

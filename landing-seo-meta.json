@@ -1,0 +1,26 @@
+{
+    "title": "Pneumonia Detection API | AI Chest X-ray Analysis (FastAPI + ONNX)",
+    "description": "Upload chest X-rays and get AI predictions with confidence scores. Secure by design with multi-layer protection. FastAPI + ONNX. In-memory by default; Redis optional.",
+    "keywords": [
+        "pneumonia detection API",
+        "chest x-ray AI",
+        "FastAPI ONNX",
+        "medical imaging inference",
+        "rate limiting",
+        "IP switching detection",
+        "behavioral analysis"
+    ],
+    "openGraph": {
+        "title": "Pneumonia Detection API",
+        "description": "AI-powered chest X-ray analysis—fast, accurate, secure.",
+        "image": "{{og_image_url}}",
+        "url": "{{public_site_url}}",
+        "type": "website"
+    },
+    "twitter": {
+        "card": "summary_large_image",
+        "title": "Pneumonia Detection API",
+        "description": "AI-powered chest X-ray analysis—fast, accurate, secure.",
+        "image": "{{og_image_url}}"
+    }
+}
