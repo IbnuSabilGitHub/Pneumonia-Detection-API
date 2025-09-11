@@ -10,9 +10,11 @@ from ..models.schemas import HealthResponse
 from ..services.prediction import PneumoniaPredictionService
 from ..core.settings import settings
 from ..core.logger import get_logger
+from ..docs.health_metadata import HealthMetadata
 
 logger = get_logger(__name__)
 router = APIRouter()
+health_metadata = HealthMetadata.get_metadata()
 
 # For backward compatibility with slowapi
 limiter = Limiter(key_func=get_remote_address)
@@ -28,50 +30,20 @@ def get_prediction_service() -> PneumoniaPredictionService:
 
 
 @router.get(
-    "/", 
-    response_model=HealthResponse, 
-    tags=["Health"],
-    summary="🏥 Service Health Check",
-    description="""
-Health Check Endpoint
-
-Provides comprehensive health status information about the Pneumonia Detection API service.
-
-📊 Health Status Levels
-
-• healthy: All systems operational, model loaded and ready
-• partial: Service running but with limitations (e.g., model not loaded)  
-• unhealthy: Critical issues detected
-
-📋 Response Information
-
-• Status: Current health state of the service
-• Model Status: Whether AI models are loaded and ready
-• Version: Current API version
-• Uptime: Time since service start (in seconds)
-
-🔍 Use Cases
-
-• Load Balancer Health Checks: Monitor service availability
-• Monitoring Systems: Track service uptime and status
-• Troubleshooting: Verify service and model status
-• Development: Quick service verification
-
-⚡ Performance
-
-• Response Time: < 100ms typical
-• Rate Limiting: No rate limits applied
-• Caching: Status computed in real-time
-    """,
-    response_description="Service health status with detailed information"
-)
-@router.get(
     "/health", 
     response_model=HealthResponse, 
     tags=["Health"],
-    summary="🏥 Service Health Check (Alternative)",
+    summary="Service Health Check (Alternative)",
     description="Alternative endpoint for health checking - same functionality as root endpoint"
 )
+
+@router.get(
+    "/",
+    response_model=HealthResponse,
+    tags=["Health"],
+    **health_metadata
+)
+
 async def health_check(
     prediction_service: PneumoniaPredictionService = Depends(get_prediction_service)
 ):

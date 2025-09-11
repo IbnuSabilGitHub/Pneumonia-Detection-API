@@ -134,13 +134,13 @@ class PneumoniaPredictionService:
         """
         if prediction == 'PNEUMONIA':
             if confidence > model_config.HIGH_CONFIDENCE_THRESHOLD:
-                return "🚨 URGENT: Immediate medical consultation required"
+                return "URGENT: Immediate medical consultation required"
             elif confidence > model_config.MEDIUM_CONFIDENCE_THRESHOLD:
-                return "⚠️ Medical consultation strongly recommended"
+                return "edical consultation strongly recommended"
             else:
-                return "⚠️ Consider medical consultation"
+                return "Consider medical consultation"
         else:
-            return "✅ Normal results - maintain regular health checkups"
+            return "Normal results - maintain regular health checkups"
     
     def predict(self, image: Image.Image) -> Dict[str, Any]:
         """
