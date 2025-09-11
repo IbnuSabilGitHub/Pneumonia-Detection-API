@@ -8,7 +8,7 @@ from .docs.api_metadata import APIMetadata
 from .core.settings import settings
 from .core.logger import setup_logging, get_logger
 from .services.prediction import PneumoniaPredictionService
-from .api import health, prediction, security_status
+from .api import health, prediction, status, stats
 from .middleware.security import (
     logging_middleware,
     error_handling_middleware,
@@ -109,7 +109,8 @@ def create_app() -> FastAPI:
     # Include routers
     app.include_router(health.router)
     app.include_router(prediction.router, prefix="/pneumonia")
-    app.include_router(security_status.router, prefix="/security")
+    app.include_router(status.router, prefix="/security")
+    app.include_router(stats.router, prefix="/security")
     
     # Setup global exception handlers
     _setup_exception_handlers(app)

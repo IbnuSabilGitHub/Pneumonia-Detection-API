@@ -3,7 +3,7 @@ Security Status Endpoint
 """
 from datetime import datetime
 from fastapi import APIRouter
-from ..docs.status import StatusMetadata
+from ..docs.status_metadata import StatusMetadata
 
 from ..core.logger import get_logger
 
@@ -13,14 +13,14 @@ router = APIRouter()
 status_metadata = StatusMetadata.get_metadata()
 
 
-@router.get("/status", **status_metadata)
+@router.get("/status", tags=["Security"], **status_metadata)
 async def get_security_status():
     """
     **🛡️ Advanced Security System Status**
     
     Provides comprehensive real-time status of the multi-layer security protection
     system including threat detection, rate limiting, and attack prevention measures.
-    
+    F
     **Security Layers Monitored:**
     - **Rate Limiting**: Request frequency controls per IP
     - **Attack Detection**: Sophisticated attack pattern recognition
