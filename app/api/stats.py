@@ -3,8 +3,9 @@ Security Statistics Endpoint
 """
 
 from datetime import datetime
-from fastapi import APIRouter
+from fastapi import APIRouter, HTTPException, status
 from ..docs.stat_metadata import StatMetadata
+from ..models.schemas import SecurityStatsResponse, SecurityStatsErrorResponse
 
 from ..core.logger import get_logger
 
@@ -12,8 +13,13 @@ logger = get_logger(__name__)
 router = APIRouter()
 stat_metadata = StatMetadata.get_metadata()
 
-@router.get("/stats",tags=["Security"],**stat_metadata)
-async def get_security_stats():
+@router.get(
+    "/stats",
+    tags=["Security"],
+    response_model=SecurityStatsResponse,
+    **stat_metadata
+)
+async def get_security_stats() -> SecurityStatsResponse:
     """
     **📊 Comprehensive Security Analytics Dashboard**
     
@@ -66,48 +72,82 @@ async def get_security_stats():
     advanced_rate_limiter = get_rate_limiter()
     
     if advanced_rate_limiter is None:
-        return {
-            "error": "Rate limiter not initialized",
-            "timestamp": datetime.now().isoformat()
-        }
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail={
+                "error": "Rate limiter not initialized",
+                "error_code": "RATE_LIMITER_NOT_INITIALIZED",
+                "timestamp": datetime.now().isoformat(),
+                "details": {
+                    "component": "rate_limiter",
+                    "initialization_status": "failed"
+                }
+            }
+        )
     
     try:
         # Use async method if available
         if hasattr(advanced_rate_limiter, '_storage_initialized') and advanced_rate_limiter._storage_initialized:
-            status = await advanced_rate_limiter.get_security_status_async()
+            security_metrics = await advanced_rate_limiter.get_security_status_async()
         else:
-            status = advanced_rate_limiter.get_security_status()
+            security_metrics = advanced_rate_limiter.get_security_status()
+            
     except Exception as e:
         logger.error(f"Failed to get security stats: {e}")
-        return {
-            "error": str(e),
-            "timestamp": datetime.now().isoformat()
-        }
-    
-    return {
-        "security_metrics": status,
-        "timestamp": datetime.now().isoformat(),
-        "interpretation": {
-            "attack_score": {
-                "value": status["global_attack_score"],
-                "level": (
-                    "LOW" if status["global_attack_score"] < 0.3 else
-                    "MEDIUM" if status["global_attack_score"] < 0.7 else
-                    "HIGH"
-                ),
-                "description": "Global attack probability score (0.0-1.0)"
-            },
-            "request_rate": {
-                "value": status["requests_per_minute"],
-                "description": "Total requests in the last minute"
-            },
-            "unique_ips": {
-                "value": status["recent_unique_ips"],
-                "description": "Number of unique IP addresses in recent activity"
-            },
-            "blocked_count": {
-                "value": status["blocked_fingerprints"],
-                "description": "Number of currently blocked request fingerprints"
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail={
+                "error": str(e),
+                "error_code": "SECURITY_STATS_RETRIEVAL_ERROR",
+                "timestamp": datetime.now().isoformat(),
+                "details": {
+                    "component": "security_analytics",
+                    "operation": "get_security_status"
+                }
             }
+        )
+    
+    # Generate threat level interpretation
+    attack_score = security_metrics.get("global_attack_score", 0.0)
+    threat_level = (
+        "LOW" if attack_score < 0.3 else
+        "MEDIUM" if attack_score < 0.7 else
+        "HIGH"
+    )
+    
+    # Build comprehensive interpretation
+    interpretation = {
+        "attack_score": {
+            "value": attack_score,
+            "level": threat_level,
+            "description": "Global attack probability score (0.0-1.0)"
+        },
+        "request_rate": {
+            "value": security_metrics.get("requests_per_minute", 0),
+            "description": "Total requests in the last minute"
+        },
+        "unique_ips": {
+            "value": security_metrics.get("recent_unique_ips", 0),
+            "description": "Number of unique IP addresses in recent activity"
+        },
+        "blocked_count": {
+            "value": security_metrics.get("blocked_fingerprints", 0),
+            "description": "Number of currently blocked request fingerprints"
         }
     }
+    
+    # Optional analytics summary for enhanced insights
+    analytics_summary = None
+    if "total_requests_24h" in security_metrics:
+        analytics_summary = {
+            "daily_total": security_metrics.get("total_requests_24h", 0),
+            "threat_level": threat_level,
+            "storage_backend": security_metrics.get("storage_type", "unknown")
+        }
+    
+    return SecurityStatsResponse(
+        security_metrics=security_metrics,
+        timestamp=datetime.now().isoformat(),
+        interpretation=interpretation,
+        analytics_summary=analytics_summary
+    )

@@ -271,9 +271,171 @@ class SecurityErrorResponse(BaseModel):
                 "error": "Rate limiter not initialized"
             }
         }
+        
+class SecurityStatsResponse(BaseModel):
+    """
+    **� Advanced Security Analytics Response**
+    
+    Comprehensive security statistics response providing detailed analysis of 
+    security events, threat patterns, and protection effectiveness over time.
+    
+    **Analytics Categories:**
+    - **Threat Analysis**: Global attack probability scoring and interpretation
+    - **Traffic Analytics**: Real-time request monitoring and IP tracking
+    - **Protection Effectiveness**: Blocked requests and success rates
+    - **System Performance**: Response times and resource utilization
+    
+    **Threat Level Interpretation:**
+    - **LOW** (0.0-0.3): Normal operations, standard monitoring
+    - **MEDIUM** (0.3-0.7): Elevated vigilance, possible threats  
+    - **HIGH** (0.7-1.0): Active attacks, enhanced protection mode
+    """
+    
+    security_metrics: Dict = Field(
+        ..., 
+        description="📈 Raw security metrics and measurements",
+        example={
+            "global_attack_score": 0.25,
+            "requests_per_minute": 45,
+            "recent_unique_ips": 12,
+            "blocked_fingerprints": 3,
+            "storage_type": "memory",
+            "avg_response_time_ms": 85,
+            "total_requests_24h": 2847
+        }
+    )
+    
+    timestamp: str = Field(
+        ..., 
+        description="⏰ Analytics timestamp in ISO format",
+        example="2025-09-12T10:30:00.000Z"
+    )
+    
+    interpretation: Dict = Field(
+        ..., 
+        description="🎯 Human-readable interpretation of security metrics",
+        example={
+            "attack_score": {
+                "value": 0.25,
+                "level": "LOW",
+                "description": "Global attack probability score (0.0-1.0)"
+            },
+            "request_rate": {
+                "value": 45,
+                "description": "Total requests in the last minute"
+            },
+            "unique_ips": {
+                "value": 12,
+                "description": "Number of unique IP addresses in recent activity"
+            },
+            "blocked_count": {
+                "value": 3,
+                "description": "Number of currently blocked request fingerprints"
+            }
+        }
+    )
+    
+    analytics_summary: Optional[Dict] = Field(
+        None,
+        description="📊 Optional summary analytics for extended periods",
+        example={
+            "hourly_trend": "increasing",
+            "daily_average": 42.5,
+            "threat_level_changes": 3
+        }
+    )
+    
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "security_metrics": {
+                    "global_attack_score": 0.25,
+                    "requests_per_minute": 45,
+                    "recent_unique_ips": 12,
+                    "blocked_fingerprints": 3,
+                    "storage_type": "memory",
+                    "avg_response_time_ms": 85,
+                    "total_requests_24h": 2847
+                },
+                "timestamp": "2025-09-12T10:30:00.000Z",
+                "interpretation": {
+                    "attack_score": {
+                        "value": 0.25,
+                        "level": "LOW",
+                        "description": "Global attack probability score (0.0-1.0)"
+                    },
+                    "request_rate": {
+                        "value": 45,
+                        "description": "Total requests in the last minute"
+                    },
+                    "unique_ips": {
+                        "value": 12,
+                        "description": "Number of unique IP addresses in recent activity"
+                    },
+                    "blocked_count": {
+                        "value": 3,
+                        "description": "Number of currently blocked request fingerprints"
+                    }
+                },
+                "analytics_summary": {
+                    "hourly_trend": "increasing",
+                    "daily_average": 42.5,
+                    "threat_level_changes": 3
+                }
+            }
+        }
 
 
-class ErrorResponse(BaseModel):
+class SecurityStatsErrorResponse(BaseModel):
+    """
+    **❌ Security Statistics Error Response**
+    
+    Error response when security statistics cannot be retrieved due to
+    system issues or initialization problems.
+    """
+    
+    error: str = Field(
+        ..., 
+        description="❌ Detailed error message",
+        example="Rate limiter not initialized"
+    )
+    
+    error_code: Optional[str] = Field(
+        None,
+        description="🏷️ Application-specific error code", 
+        example="RATE_LIMITER_NOT_INITIALIZED"
+    )
+    
+    timestamp: str = Field(
+        ..., 
+        description="⏰ Error timestamp in ISO format",
+        example="2025-09-12T10:30:00.000Z"
+    )
+    
+    details: Optional[Dict] = Field(
+        None,
+        description="📋 Additional error context and debugging information",
+        example={
+            "component": "rate_limiter",
+            "initialization_status": "failed"
+        }
+    )
+    
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "error": "Rate limiter not initialized",
+                "error_code": "RATE_LIMITER_NOT_INITIALIZED",
+                "timestamp": "2025-09-12T10:30:00.000Z",
+                "details": {
+                    "component": "rate_limiter", 
+                    "initialization_status": "failed"
+                }
+            }
+        }
+
+
+class SecurityStatResponse(BaseModel):
     """Response model for error cases."""
     
     detail: str = Field(..., description="Error message")

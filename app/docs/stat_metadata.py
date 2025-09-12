@@ -170,10 +170,13 @@ Comprehensive security statistics and threat analysis
     def get_metadata(cls) -> Dict[str, Any]:
         """Get complete metadata for FastAPI endpoint configuration."""
         return {
-            "summary": "Detailed Security Statistics",
+            "summary": "📊 Security Analytics & Statistics",
             "description": cls.get_full_description(),
             "response_description": cls.get_response_description(),
-            "responses": cls.get_responses()
+            "responses": cls.get_responses(),
+            "operation_id": "get_security_statistics",
+            "response_model_exclude_unset": True,
+            "response_model_exclude_none": True
         }
     
     
