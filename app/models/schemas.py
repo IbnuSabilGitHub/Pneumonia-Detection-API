@@ -2,7 +2,7 @@
 Pydantic models for request/response validation.
 """
 from pydantic import BaseModel, Field
-from typing import Dict, Optional
+from typing import Dict, Optional, List
 
 
 class PredictionResponse(BaseModel):
@@ -136,30 +136,139 @@ class HealthResponse(BaseModel):
 
 
 class SecurityStatusResponse(BaseModel):
-    """Response model for security status endpoint."""
+    """
+    **🛡️ Advanced Security System Status Response**
     
-    client_ip: str = Field(..., description="Client IP address")
-    requests_in_last_minute: int = Field(..., description="Number of requests in the last minute")
-    rate_limit: str = Field(..., description="Rate limit configuration")
-    is_blocked: bool = Field(..., description="Whether the IP is currently blocked")
-    cache_entries: int = Field(..., description="Number of cached file hashes")
-    security_features: list = Field(..., description="List of enabled security features")
+    Comprehensive security status response providing real-time information about
+    the multi-layer security protection system including threat detection,
+    rate limiting, and attack prevention measures.
+    
+    **Security Layers Monitored:**
+    - Multi-layer Rate Limiting (In-Memory)
+    - IP Switching Attack Detection (In-Memory)
+    - Request Fingerprinting (In-Memory)
+    - Behavioral Analysis (In-Memory)
+    - Global Attack Scoring (In-Memory)
+    - Duplicate File Detection (In-Memory)
+    
+    **Status Categories:**
+    - **active**: Security system fully operational
+    - **not_initialized**: Security components not ready
+    - **degraded**: Partial security functionality
+    """
+    
+    service: str = Field(
+        ..., 
+        description="🏥 API service name",
+        example="Pneumonia Detection API"
+    )
+    security_status: str = Field(
+        ..., 
+        description="🛡️ Overall security system status",
+        example="active",
+        pattern="^(active|not_initialized|degraded)$"
+    )
+    timestamp: str = Field(
+        ..., 
+        description="⏰ Status timestamp in ISO format",
+        example="2025-09-10T10:30:00.000Z"
+    )
+    advanced_protection: Dict = Field(
+        ..., 
+        description="📊 Detailed security metrics and protection data",
+        example={
+            "global_attack_score": 0.15,
+            "requests_per_minute": 23,
+            "recent_unique_ips": 8,
+            "blocked_fingerprints": 2,
+            "storage_type": "memory"
+        }
+    )
+    protection_features: List[str] = Field(
+        ..., 
+        description="🔒 List of active security protection features",
+        example=[
+            "Multi-layer Rate Limiting (In-Memory)",
+            "IP Switching Attack Detection (In-Memory)",
+            "Request Fingerprinting (In-Memory)",
+            "Behavioral Analysis (In-Memory)",
+            "Global Attack Scoring (In-Memory)",
+            "Duplicate File Detection (In-Memory)",
+            "Persistent Storage (In-Memory)",
+            "Single-instance Optimized (In-Memory)"
+        ]
+    )
+    error: Optional[str] = Field(
+        None, 
+        description="❌ Error message if security system has issues",
+        example="Rate limiter not initialized"
+    )
     
     class Config:
         json_schema_extra = {
             "example": {
-                "client_ip": "192.168.1.1",
-                "requests_in_last_minute": 3,
-                "rate_limit": "5 requests per minute",
-                "is_blocked": False,
-                "cache_entries": 15,
-                "security_features": [
-                    "Rate Limiting (5/min per IP)",
-                    "File Size Validation (10MB max)",
-                    "File Type Validation (JPG, JPEG, PNG)",
-                    "Image Content Validation",
-                    "Duplicate Detection (5min cache)"
+                "service": "Pneumonia Detection API",
+                "security_status": "active",
+                "timestamp": "2025-09-10T10:30:00.000Z",
+                "advanced_protection": {
+                    "global_attack_score": 0.15,
+                    "requests_per_minute": 23,
+                    "recent_unique_ips": 8,
+                    "blocked_fingerprints": 2,
+                    "storage_type": "memory",
+                    "avg_response_time_ms": 85,
+                    "total_requests_24h": 1847
+                },
+                "protection_features": [
+                    "Multi-layer Rate Limiting (In-Memory)",
+                    "IP Switching Attack Detection (In-Memory)",
+                    "Request Fingerprinting (In-Memory)",
+                    "Behavioral Analysis (In-Memory)",
+                    "Global Attack Scoring (In-Memory)",
+                    "Duplicate File Detection (In-Memory)",
+                    "Persistent Storage (In-Memory)",
+                    "Single-instance Optimized (In-Memory)"
                 ]
+            }
+        }
+
+
+class SecurityErrorResponse(BaseModel):
+    """
+    **❌ Security System Error Response**
+    
+    Error response when the security system encounters issues
+    or is not properly initialized.
+    """
+    
+    service: str = Field(
+        ..., 
+        description="🏥 API service name",
+        example="Pneumonia Detection API"
+    )
+    security_status: str = Field(
+        ..., 
+        description="🛡️ Security system status indicating error state",
+        example="not_initialized"
+    )
+    timestamp: str = Field(
+        ..., 
+        description="⏰ Error timestamp in ISO format",
+        example="2025-09-10T10:30:00.000Z"
+    )
+    error: str = Field(
+        ..., 
+        description="❌ Detailed error message",
+        example="Rate limiter not initialized"
+    )
+    
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "service": "Pneumonia Detection API",
+                "security_status": "not_initialized",
+                "timestamp": "2025-09-10T10:30:00.000Z",
+                "error": "Rate limiter not initialized"
             }
         }
 

@@ -142,8 +142,11 @@ from various attacks and abuse patterns.</p>
     def get_metadata(cls) -> Dict[str, Any]:
         """Get complete metadata for FastAPI endpoint configuration."""
         return {
-            "summary": "Security System Status",
+            "summary": "🛡️ Security System Status",
             "description": cls.get_full_description(),
             "response_description": "Current security system status and active protections",
-            "responses": cls.get_responses()
+            "responses": cls.get_responses(),
+            "operation_id": "get_security_status",
+            "response_model_exclude_unset": True,
+            "response_model_exclude_none": True
         }

@@ -2,8 +2,9 @@
 Security Status Endpoint
 """
 from datetime import datetime
-from fastapi import APIRouter
+from fastapi import APIRouter, HTTPException, status
 from ..docs.status_metadata import StatusMetadata
+from ..models.schemas import SecurityStatusResponse, SecurityErrorResponse
 
 from ..core.logger import get_logger
 
@@ -13,8 +14,13 @@ router = APIRouter()
 status_metadata = StatusMetadata.get_metadata()
 
 
-@router.get("/status", tags=["Security"], **status_metadata)
-async def get_security_status():
+@router.get(
+    "/status", 
+    tags=["Security"], 
+    response_model=SecurityStatusResponse,
+    **status_metadata
+)
+async def get_security_status() -> SecurityStatusResponse:
     """
     **🛡️ Advanced Security System Status**
     
@@ -54,29 +60,40 @@ async def get_security_status():
     advanced_rate_limiter = get_rate_limiter()
     
     if advanced_rate_limiter is None:
-        return {
-            "service": "Pneumonia Detection API",
-            "security_status": "not_initialized",
-            "timestamp": datetime.now().isoformat(),
-            "error": "Rate limiter not initialized"
-        }
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail={
+                "service": "Pneumonia Detection API",
+                "security_status": "not_initialized",
+                "timestamp": datetime.now().isoformat(),
+                "error": "Rate limiter not initialized"
+            }
+        )
     
     # Use async method if available, otherwise fallback
     try:
         if hasattr(advanced_rate_limiter, '_storage_initialized') and advanced_rate_limiter._storage_initialized:
-            status = await advanced_rate_limiter.get_security_status_async()
+            advanced_protection = await advanced_rate_limiter.get_security_status_async()
         else:
-            status = advanced_rate_limiter.get_security_status()
+            advanced_protection = advanced_rate_limiter.get_security_status()
     except Exception as e:
         logger.error(f"Failed to get security status: {e}")
-        status = {"error": str(e)}
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail={
+                "service": "Pneumonia Detection API",
+                "security_status": "not_initialized",
+                "timestamp": datetime.now().isoformat(),
+                "error": str(e)
+            }
+        )
     
-    return {
-        "service": "Pneumonia Detection API",
-        "security_status": "active",
-        "timestamp": datetime.now().isoformat(),
-        "advanced_protection": status,
-        "protection_features": [
+    return SecurityStatusResponse(
+        service="Pneumonia Detection API",
+        security_status="active",
+        timestamp=datetime.now().isoformat(),
+        advanced_protection=advanced_protection,
+        protection_features=[
             "Multi-layer Rate Limiting (In-Memory)",
             "IP Switching Attack Detection (In-Memory)", 
             "Request Fingerprinting (In-Memory)",
@@ -86,4 +103,4 @@ async def get_security_status():
             "Persistent Storage (In-Memory)",
             "Single-instance Optimized (In-Memory)"
         ]
-    }
+    )
