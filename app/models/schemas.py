@@ -435,6 +435,69 @@ class SecurityStatsErrorResponse(BaseModel):
         }
 
 
+class RateLimitErrorResponse(BaseModel):
+    """
+    **⚠️ Rate Limit Exceeded Response**
+    
+    Response returned when API rate limits are exceeded.
+    Includes details about the limit and when to retry.
+    """
+    
+    error: str = Field(
+        ..., 
+        description="❌ Error message",
+        example="Rate limit exceeded"
+    )
+    
+    message: str = Field(
+        ..., 
+        description="📝 Detailed reason for rate limiting",
+        example="Too many requests from IP address"
+    )
+    
+    client_ip: str = Field(
+        ..., 
+        description="🌐 Client IP address that exceeded the limit",
+        example="192.168.1.1"
+    )
+    
+    endpoint: str = Field(
+        ..., 
+        description="🎯 Endpoint that was rate limited",
+        example="/pneumonia/predict"
+    )
+    
+    timestamp: float = Field(
+        ..., 
+        description="⏰ Unix timestamp when rate limit was triggered",
+        example=1694537400.123
+    )
+    
+    details: Dict = Field(
+        ..., 
+        description="📊 Additional rate limiting details",
+        example={
+            "rate_limit": "5 per minute",
+            "retry_after": 60
+        }
+    )
+    
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "error": "Rate limit exceeded",
+                "message": "Too many requests from IP address",
+                "client_ip": "192.168.1.1",
+                "endpoint": "/pneumonia/predict", 
+                "timestamp": 1694537400.123,
+                "details": {
+                    "rate_limit": "5 per minute",
+                    "retry_after": 60
+                }
+            }
+        }
+
+
 class SecurityStatResponse(BaseModel):
     """Response model for error cases."""
     

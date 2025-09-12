@@ -123,7 +123,7 @@ class SecurityMiddleware(BaseHTTPMiddleware):
             return {"allowed": True, "reason": f"Rate limit check failed: {e}", "details": {}}
     
     def _create_rate_limit_response(self, rate_limit_result: dict, client_ip: str, endpoint: str):
-        """Create rate limit exceeded response."""
+        """Create rate limit exceeded response with proper CORS headers."""
         reason = rate_limit_result["reason"]
         details = rate_limit_result["details"]
         
@@ -138,15 +138,23 @@ class SecurityMiddleware(BaseHTTPMiddleware):
             "details": details
         }
         
+        # Include proper CORS headers to prevent "Failed to fetch" in Swagger UI
+        cors_headers = {
+            "Access-Control-Allow-Origin": "*",
+            "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+            "Access-Control-Allow-Headers": "*",
+            "Access-Control-Allow-Credentials": "true",
+            "Content-Type": "application/json",
+            "Retry-After": "60",
+            "X-RateLimit-Limit": str(details.get("rate_limit", "unknown")),
+            "X-RateLimit-Remaining": "0",
+            "X-RateLimit-Reset": str(int(time.time() + 60))
+        }
+        
         return JSONResponse(
             status_code=status.HTTP_429_TOO_MANY_REQUESTS,
             content=error_detail,
-            headers={
-                "Retry-After": "60",
-                "X-RateLimit-Limit": str(details.get("rate_limit", "unknown")),
-                "X-RateLimit-Remaining": "0",
-                "X-RateLimit-Reset": str(int(time.time() + 60))
-            }
+            headers=cors_headers
         ) 
 
 

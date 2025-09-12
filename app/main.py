@@ -1,3 +1,4 @@
+import time
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, HTTPException, status
 from fastapi.middleware.cors import CORSMiddleware
@@ -130,6 +131,33 @@ def _setup_exception_handlers(app: FastAPI) -> None:
             content={
                 "detail": "File too large",
                 "error_code": "FILE_TOO_LARGE"
+            },
+            headers={
+                "Access-Control-Allow-Origin": "*",
+                "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS", 
+                "Access-Control-Allow-Headers": "*",
+                "Content-Type": "application/json"
+            }
+        )
+    
+    @app.exception_handler(429)
+    async def rate_limit_handler(request, exc):
+        """Handle rate limit exceeded errors with proper CORS headers."""
+        return JSONResponse(
+            status_code=429,
+            content={
+                "error": "Rate limit exceeded",
+                "message": "Too many requests",
+                "endpoint": request.url.path,
+                "timestamp": time.time(),
+                "details": {"retry_after": 60}
+            },
+            headers={
+                "Access-Control-Allow-Origin": "*",
+                "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+                "Access-Control-Allow-Headers": "*", 
+                "Content-Type": "application/json",
+                "Retry-After": "60"
             }
         )
     
@@ -146,8 +174,15 @@ def _setup_exception_handlers(app: FastAPI) -> None:
                     "prediction": "/pneumonia/predict",
                     "model_info": "/pneumonia/model/info",
                     "security_status": "/security/status",
+                    "security_stats": "/security/stats",
                     "docs": "/docs"
                 }
+            },
+            headers={
+                "Access-Control-Allow-Origin": "*",
+                "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+                "Access-Control-Allow-Headers": "*",
+                "Content-Type": "application/json"
             }
         )
 
