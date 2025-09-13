@@ -48,7 +48,7 @@ async def health_check(
     prediction_service: PneumoniaPredictionService = Depends(get_prediction_service)
 ):
     """
-    **🏥 Comprehensive Health Check**
+    **Comprehensive Health Check**
     
     Returns detailed health status including:
     - Service availability and operational state

@@ -22,7 +22,7 @@ status_metadata = StatusMetadata.get_metadata()
 )
 async def get_security_status() -> SecurityStatusResponse:
     """
-    **🛡️ Advanced Security System Status**
+    **Advanced Security System Status**
     
     Provides comprehensive real-time status of the multi-layer security protection
     system including threat detection, rate limiting, and attack prevention measures.

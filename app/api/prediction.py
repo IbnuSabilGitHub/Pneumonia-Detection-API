@@ -45,7 +45,7 @@ async def predict_pneumonia(
     request: Request,
     file: UploadFile = File(
         ..., 
-        description="📸 Chest X-ray image file (JPG, JPEG, PNG - max 10MB)",
+        description="Chest X-ray image file (JPG, JPEG, PNG - max 10MB)",
         example="chest_xray.jpg"
     ),
     prediction_service: PneumoniaPredictionService = Depends(get_prediction_service)

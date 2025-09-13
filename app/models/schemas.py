@@ -7,7 +7,7 @@ from typing import Dict, Optional, List
 
 class PredictionResponse(BaseModel):
     """
-    **🔬 AI Pneumonia Detection Response**
+    **AI Pneumonia Detection Response**
     
     Comprehensive response model containing AI analysis results, confidence metrics,
     and medical recommendations for chest X-ray pneumonia detection.
@@ -28,7 +28,7 @@ class PredictionResponse(BaseModel):
     
     prediction: str = Field(
         ..., 
-        description="🎯 AI classification result",
+        description="AI classification result",
         example="NORMAL",
         pattern="^(NORMAL|PNEUMONIA)$"
     )
@@ -36,33 +36,33 @@ class PredictionResponse(BaseModel):
         ..., 
         ge=0.0, 
         le=1.0, 
-        description="📊 AI confidence score (0.0=uncertain, 1.0=highly confident)",
+        description="AI confidence score (0.0=uncertain, 1.0=highly confident)",
         example=0.92
     )
     probabilities: Dict[str, float] = Field(
         ..., 
-        description="📈 Individual class probabilities breakdown",
+        description="Individual class probabilities breakdown",
         example={"NORMAL": 0.92, "PNEUMONIA": 0.08}
     )
     medical_recommendation: str = Field(
         ..., 
-        description="💡 Contextual medical guidance based on AI results",
-        example="✅ Normal results - maintain regular health checkups"
+        description="Contextual medical guidance based on AI results",
+        example="Normal results - maintain regular health checkups"
     )
     model_version: str = Field(
         default="v1.0", 
-        description="🤖 AI model version used for analysis",
+        description="AI model version used for analysis",
         example="v1.0"
     )
     model_type: str = Field(
         ...,
-        description="🧠 Specific AI model architecture (standard or efficientnet_b0)",
+        description="Specific AI model architecture (standard or efficientnet_b0)",
         example="standard",
         pattern="^(standard|efficientnet_b0)$"
     )
     disclaimer: str = Field(
         default="This model is for educational purposes only. Consult a healthcare professional for medical advice.",
-        description="⚠️ Important medical disclaimer",
+        description="Important medical disclaimer",
     )
     
     class Config:
@@ -74,7 +74,7 @@ class PredictionResponse(BaseModel):
                     "NORMAL": 0.92,
                     "PNEUMONIA": 0.08
                 },
-                "medical_recommendation": "✅ Normal results - maintain regular health checkups",
+                "medical_recommendation": "Normal results - maintain regular health checkups",
                 "model_version": "v1.0",
                 "model_type": "standard",
                 "disclaimer": "This model is for educational purposes only. Consult a healthcare professional for medical advice."
@@ -84,7 +84,7 @@ class PredictionResponse(BaseModel):
 
 class HealthResponse(BaseModel):
     """
-    **🏥 Service Health Status Response**
+    **Service Health Status Response**
     
     Comprehensive health check response providing detailed information about
     API service status, model availability, and system uptime.
@@ -103,23 +103,23 @@ class HealthResponse(BaseModel):
     
     status: str = Field(
         ..., 
-        description="🚦 Overall service health status",
+        description="Overall service health status",
         example="healthy",
         pattern="^(healthy|partial|unhealthy)$"
     )
     model_loaded: bool = Field(
         ..., 
-        description="🤖 AI model loading and readiness status",
+        description="AI model loading and readiness status",
         example=True
     )
     version: str = Field(
         ..., 
-        description="📌 Current API version identifier",
+        description="Current API version identifier",
         example="1.0.0"
     )
     uptime: Optional[float] = Field(
         None, 
-        description="⏱️ Service uptime since last restart (seconds)",
+        description="Service uptime since last restart (seconds)",
         example=3600.5,
         ge=0.0
     )
@@ -137,7 +137,7 @@ class HealthResponse(BaseModel):
 
 class SecurityStatusResponse(BaseModel):
     """
-    **🛡️ Advanced Security System Status Response**
+    **Advanced Security System Status Response**
     
     Comprehensive security status response providing real-time information about
     the multi-layer security protection system including threat detection,
@@ -159,23 +159,23 @@ class SecurityStatusResponse(BaseModel):
     
     service: str = Field(
         ..., 
-        description="🏥 API service name",
+        description="API service name",
         example="Pneumonia Detection API"
     )
     security_status: str = Field(
         ..., 
-        description="🛡️ Overall security system status",
+        description="Overall security system status",
         example="active",
         pattern="^(active|not_initialized|degraded)$"
     )
     timestamp: str = Field(
         ..., 
-        description="⏰ Status timestamp in ISO format",
+        description="Status timestamp in ISO format",
         example="2025-09-10T10:30:00.000Z"
     )
     advanced_protection: Dict = Field(
         ..., 
-        description="📊 Detailed security metrics and protection data",
+        description="Detailed security metrics and protection data",
         example={
             "global_attack_score": 0.15,
             "requests_per_minute": 23,
@@ -186,7 +186,7 @@ class SecurityStatusResponse(BaseModel):
     )
     protection_features: List[str] = Field(
         ..., 
-        description="🔒 List of active security protection features",
+        description="List of active security protection features",
         example=[
             "Multi-layer Rate Limiting (In-Memory)",
             "IP Switching Attack Detection (In-Memory)",
@@ -200,7 +200,7 @@ class SecurityStatusResponse(BaseModel):
     )
     error: Optional[str] = Field(
         None, 
-        description="❌ Error message if security system has issues",
+        description="Error message if security system has issues",
         example="Rate limiter not initialized"
     )
     
@@ -235,7 +235,7 @@ class SecurityStatusResponse(BaseModel):
 
 class SecurityErrorResponse(BaseModel):
     """
-    **❌ Security System Error Response**
+    **Security System Error Response**
     
     Error response when the security system encounters issues
     or is not properly initialized.
@@ -243,22 +243,22 @@ class SecurityErrorResponse(BaseModel):
     
     service: str = Field(
         ..., 
-        description="🏥 API service name",
+        description="API service name",
         example="Pneumonia Detection API"
     )
     security_status: str = Field(
         ..., 
-        description="🛡️ Security system status indicating error state",
+        description="Security system status indicating error state",
         example="not_initialized"
     )
     timestamp: str = Field(
         ..., 
-        description="⏰ Error timestamp in ISO format",
+        description="Error timestamp in ISO format",
         example="2025-09-10T10:30:00.000Z"
     )
     error: str = Field(
         ..., 
-        description="❌ Detailed error message",
+        description="Detailed error message",
         example="Rate limiter not initialized"
     )
     
@@ -388,7 +388,7 @@ class SecurityStatsResponse(BaseModel):
 
 class SecurityStatsErrorResponse(BaseModel):
     """
-    **❌ Security Statistics Error Response**
+    **Security Statistics Error Response**
     
     Error response when security statistics cannot be retrieved due to
     system issues or initialization problems.
@@ -437,7 +437,7 @@ class SecurityStatsErrorResponse(BaseModel):
 
 class RateLimitErrorResponse(BaseModel):
     """
-    **⚠️ Rate Limit Exceeded Response**
+    **Rate Limit Exceeded Response**
     
     Response returned when API rate limits are exceeded.
     Includes details about the limit and when to retry.
@@ -445,37 +445,37 @@ class RateLimitErrorResponse(BaseModel):
     
     error: str = Field(
         ..., 
-        description="❌ Error message",
+        description="Error message",
         example="Rate limit exceeded"
     )
     
     message: str = Field(
         ..., 
-        description="📝 Detailed reason for rate limiting",
+        description="Detailed reason for rate limiting",
         example="Too many requests from IP address"
     )
     
     client_ip: str = Field(
         ..., 
-        description="🌐 Client IP address that exceeded the limit",
+        description="Client IP address that exceeded the limit",
         example="192.168.1.1"
     )
     
     endpoint: str = Field(
         ..., 
-        description="🎯 Endpoint that was rate limited",
+        description="Endpoint that was rate limited",
         example="/pneumonia/predict"
     )
     
     timestamp: float = Field(
         ..., 
-        description="⏰ Unix timestamp when rate limit was triggered",
+        description="Unix timestamp when rate limit was triggered",
         example=1694537400.123
     )
     
     details: Dict = Field(
         ..., 
-        description="📊 Additional rate limiting details",
+        description="Additional rate limiting details",
         example={
             "rate_limit": "5 per minute",
             "retry_after": 60

@@ -75,15 +75,20 @@ architecture details, performance metrics, and training statistics.</p>
             "content": {
                 "application/json": {
                     "example": {
-                        "model_type": "standard",
-                        "model_version": "v1.0",
-                        "architecture": "CNN",
-                        "input_shape": [224, 224, 3],
-                        "classes": ["NORMAL", "PNEUMONIA"],
-                        "training_accuracy": 0.94,
-                        "validation_accuracy": 0.91,
-                        "inference_time_ms": 200,
-                        "model_size_mb": 15.2
+                        "loaded": "true",
+                        "model_path": "models/pneumonia_model_efficientnet_b0.onnx",
+                        "input_name": "input",
+                        "output_name": "output",
+                        "mean": 0.480,
+                        "std": 0.237,
+                        "target_size": [
+                            192,
+                            192
+                        ],
+                        "labels": [
+                            "NORMAL",
+                            "PNEUMONIA"
+                        ]
                     }
                 }
             }
@@ -117,6 +122,25 @@ architecture details, performance metrics, and training statistics.</p>
             }
         }
         
+    @staticmethod
+    def get_422_response() -> Dict[str, Any]:
+        return {
+            "description": "Validation Error",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "detail": [
+                            {
+                                "loc": ["query", "model"],
+                                "msg": "Invalid model type specified",
+                                "type": "value_error"
+                            }
+                        ]
+                    }
+                }
+            }
+        }
+        
     @classmethod
     def get_full_description(cls) -> str:
         """Get complete API description by combining all sections."""
@@ -135,6 +159,7 @@ architecture details, performance metrics, and training statistics.</p>
         return {
             200: cls.get_200_response(),
             404: cls.get_404_response(),
+            422: cls.get_422_response(),
             503: cls.get_503_response()
         }
         

@@ -528,11 +528,11 @@ class AdvancedRateLimiter:
                 "requests_per_minute": len(requests_last_minute),
                 "storage_info": storage_info,
                 "protection_layers": [
-                    "IP Rate Limiting (Redis)",
-                    "Fingerprint Rate Limiting (Redis)", 
-                    "IP Switching Detection (Redis)",
-                    "Behavioral Analysis (Redis)",
-                    "Global Attack Detection (Redis)"
+                    "IP Rate Limiting",
+                    "Fingerprint Rate Limiting", 
+                    "IP Switching Detection",
+                    "Behavioral Analysis",
+                    "Global Attack Detection"
                 ]
             }
         else:

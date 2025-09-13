@@ -10,14 +10,13 @@ from ..docs.model_info_metadata import ModelInfoMetadata
 
 logger = get_logger(__name__)
 router = APIRouter()
-prediction_metadata = PredictionMetadata.get_metadata()
 
 # For backward compatibility with slowapi
 limiter = Limiter(key_func=get_remote_address)
 model_info_metadata = ModelInfoMetadata.get_metadata()
 
 @router.get(
-    "/model/info", 
+    "/model/info",
     tags=["Model"],
     **model_info_metadata
 )
@@ -25,7 +24,7 @@ async def get_model_info(
     prediction_service: PneumoniaPredictionService = Depends(get_prediction_service)
 ):
     """
-    **📊 Comprehensive Model Information**
+    **Comprehensive Model Information**
     
     Retrieves detailed information about the currently loaded AI model including:
     - Model architecture and configuration

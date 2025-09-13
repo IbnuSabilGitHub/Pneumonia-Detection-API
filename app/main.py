@@ -1,21 +1,13 @@
 import time
 from contextlib import asynccontextmanager
-from fastapi import FastAPI, HTTPException, status
-from fastapi.middleware.cors import CORSMiddleware
-from fastapi.middleware.trustedhost import TrustedHostMiddleware
+from fastapi import FastAPI, status
 from fastapi.responses import JSONResponse
 from .core.middleware_factory import MiddlewareFactory
 from .docs.api_metadata import APIMetadata
 from .core.settings import settings
 from .core.logger import setup_logging, get_logger
-from .services.prediction import PneumoniaPredictionService
-from .api import health, prediction, status, stats
-from .middleware.security import (
-    logging_middleware,
-    error_handling_middleware,
-    SecurityMiddleware
-)
-from .utils.exceptions import ModelLoadError
+from .api import health, prediction, status, stats, model_info
+
 from .core.startup_manager import StartupManager
 from .core.dependencies import get_dependencies
 
@@ -110,6 +102,7 @@ def create_app() -> FastAPI:
     # Include routers
     app.include_router(health.router)
     app.include_router(prediction.router, prefix="/pneumonia")
+    app.include_router(model_info.router, prefix="/pneumonia")
     app.include_router(status.router, prefix="/security")
     app.include_router(stats.router, prefix="/security")
     

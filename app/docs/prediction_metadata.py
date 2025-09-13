@@ -195,6 +195,42 @@ Always consult qualified healthcare professionals for medical decisions.</p>
         }
         
     @staticmethod 
+    def get_422_response() -> Dict[str, Any]:
+        return {
+            "description": "Validation Error",
+            "content": {
+                "application/json": {
+                    "examples": {
+                        "missing_file": {
+                            "summary": "No file provided",
+                            "value": {
+                                "detail": [
+                                    {
+                                        "loc": ["body", "file"],
+                                        "msg": "Field required",
+                                        "type": "missing"
+                                    }
+                                ]
+                            }
+                        },
+                        "invalid_content_type": {
+                            "summary": "Invalid Content-Type header",
+                            "value": {
+                                "detail": [
+                                    {
+                                        "loc": ["body", "file"],
+                                        "msg": "Expected multipart/form-data",
+                                        "type": "value_error"
+                                    }
+                                ]
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        
+    @staticmethod 
     def get_429_response() -> Dict[str, Any]:
         return {
             "description": "Rate limit exceeded",
@@ -239,14 +275,15 @@ Always consult qualified healthcare professionals for medical decisions.</p>
         return "".join(sections)
     
     @classmethod
-    def get_responses(self) -> Dict[int, Dict[str, Any]]:
+    def get_responses(cls) -> Dict[int, Dict[str, Any]]:
         return {
-            200: self.get_200_response(),
-            400: self.get_400_response(),
-            409: self.get_409_response(),
-            413: self.get_413_response(),
-            429: self.get_429_response(),
-            503: self.get_503_response()
+            200: cls.get_200_response(),
+            400: cls.get_400_response(),
+            409: cls.get_409_response(),
+            413: cls.get_413_response(),
+            422: cls.get_422_response(),  # Add explicit 422 response
+            429: cls.get_429_response(),
+            503: cls.get_503_response()
         }
         
     @classmethod

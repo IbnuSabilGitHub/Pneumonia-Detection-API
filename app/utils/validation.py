@@ -4,11 +4,10 @@ Image validation utilities.
 import numpy as np
 from PIL import Image
 from pathlib import Path
-from typing import Tuple
 
 from ..core.settings import settings
 from ..core.logger import get_logger
-from ..utils.exceptions import FileValidationError, ImageValidationError
+from ..utils.exceptions import  ImageValidationError
 
 logger = get_logger(__name__)
 
