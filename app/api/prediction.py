@@ -2,11 +2,13 @@
 Pneumonia prediction API endpoints.
 """
 import io
+import time
 from fastapi import APIRouter, File, UploadFile, HTTPException, status, Request, Depends
+from fastapi.responses import JSONResponse
 from slowapi import Limiter
 from slowapi.util import get_remote_address
 
-from ..models.schemas import PredictionResponse
+
 from ..services.prediction import PneumoniaPredictionService
 from ..utils.security import get_client_ip, calculate_file_hash, file_hash_cache
 from ..utils.validation import (
@@ -23,8 +25,9 @@ from ..utils.exceptions import (
 )
 from ..core.settings import settings
 from ..core.logger import get_logger
-from ..docs.prediction_metadata import PredictionMetadata
+from ..docs.sections.prediction_metadata import PredictionMetadata
 from ..utils.get_prediction_service import get_prediction_service
+from ..models.prediction_schemas import PredictionResponse
 
 logger = get_logger(__name__)
 router = APIRouter()
@@ -36,7 +39,7 @@ limiter = Limiter(key_func=get_remote_address)
 
 @router.post(
     "/predict", 
-    response_model=PredictionResponse, 
+    response_model=PredictionResponse,
     tags=["Pneumonia Detection"],
     **prediction_metadata,
 )
@@ -93,23 +96,37 @@ async def predict_pneumonia(
     # Validate prediction service is available
     if not prediction_service or not prediction_service.is_loaded():
         logger.error("Prediction service not available")
-        raise HTTPException(
+        return JSONResponse(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail="Prediction service is not available"
+            content={
+                "detail": "Prediction service is not available",
+                "error_code": "SERVICE_UNAVAILABLE",
+                "service_status": "not_initialized",
+                "retry_after": 30,
+                "timestamp": time.strftime("%Y-%m-%dT%H:%M:%S.000Z", time.gmtime())
+            }
         )
     
     # Validate file exists
     if not file.filename:
-        raise HTTPException(
+        return JSONResponse(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="No file provided"
+            content={
+                "detail": "No file provided",
+                "error_code": "MISSING_FILE",
+                "timestamp": time.strftime("%Y-%m-%dT%H:%M:%S.000Z", time.gmtime())
+            }
         )
     
     # Validate file extension
     if not validate_file_extension(file.filename):
-        raise HTTPException(
+        return JSONResponse(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Unsupported file type. Allowed: {', '.join(settings.allowed_extensions)}"
+            content={
+                "detail": f"Unsupported file type. Allowed: {', '.join(settings.allowed_extensions)}",
+                "error_code": "INVALID_FILE_FORMAT",
+                "timestamp": time.strftime("%Y-%m-%dT%H:%M:%S.000Z", time.gmtime())
+            }
         )
     
     try:
@@ -118,17 +135,29 @@ async def predict_pneumonia(
         
         # Validate file size
         if not validate_file_size(contents):
-            raise HTTPException(
+            file_size_mb = len(contents) / (1024 * 1024)
+            max_size_mb = settings.max_file_size / (1024 * 1024)
+            return JSONResponse(
                 status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
-                detail=f"File size exceeds limit of {settings.max_file_size / (1024 * 1024):.1f} MB"
+                content={
+                    "detail": f"File size exceeds limit of {max_size_mb:.1f} MB",
+                    "error_code": "FILE_TOO_LARGE",
+                    "max_size_mb": max_size_mb,
+                    "actual_size_mb": round(file_size_mb, 2),
+                    "timestamp": time.strftime("%Y-%m-%dT%H:%M:%S.000Z", time.gmtime())
+                }
             )
         
         # Check for duplicate uploads
         file_hash = calculate_file_hash(contents)
         if file_hash_cache.is_duplicate(file_hash):
-            raise HTTPException(
+            return JSONResponse(
                 status_code=status.HTTP_409_CONFLICT,
-                detail="Duplicate file detected. Please wait before uploading the same image again."
+                content={
+                    "detail": "Duplicate file detected. Please wait before uploading the same image again.",
+                    "error_code": "INVALID_MODEL",
+                    "timestamp": time.strftime("%Y-%m-%dT%H:%M:%S.000Z", time.gmtime())
+                }
             )
         
         # Validate image integrity and get PIL Image
@@ -138,9 +167,13 @@ async def predict_pneumonia(
         # Validate image content (basic X-ray checks)
         if not validate_image_content(image):
             logger.warning(f"Invalid image content detected: {file.filename} from {client_ip}")
-            raise HTTPException(
+            return JSONResponse(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Image does not appear to be a valid chest X-ray"
+                content={
+                    "detail": "Image does not appear to be a valid chest X-ray",
+                    "error_code": "INVALID_IMAGE_CONTENT",
+                    "timestamp": time.strftime("%Y-%m-%dT%H:%M:%S.000Z", time.gmtime())
+                }
             )
         
         # Get image statistics for logging
@@ -166,27 +199,43 @@ async def predict_pneumonia(
         raise
     except FileValidationError as e:
         logger.error(f"File validation error: {e}")
-        raise HTTPException(
+        return JSONResponse(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=str(e)
+            content={
+                "detail": str(e),
+                "error_code": "FILE_VALIDATION_ERROR",
+                "timestamp": time.strftime("%Y-%m-%dT%H:%M:%S.000Z", time.gmtime())
+            }
         )
     except ImageValidationError as e:
         logger.error(f"Image validation error: {e}")
-        raise HTTPException(
+        return JSONResponse(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=str(e)
+            content={
+                "detail": str(e),
+                "error_code": "IMAGE_VALIDATION_ERROR",
+                "timestamp": time.strftime("%Y-%m-%dT%H:%M:%S.000Z", time.gmtime())
+            }
         )
     except PredictionError as e:
         logger.error(f"Prediction error: {e}")
-        raise HTTPException(
+        return JSONResponse(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to process image"
+            content={
+                "detail": "Failed to process image",
+                "error_code": "PREDICTION_ERROR",
+                "timestamp": time.strftime("%Y-%m-%dT%H:%M:%S.000Z", time.gmtime())
+            }
         )
     except Exception as e:
         logger.error(f"Unexpected error in prediction: {e}", exc_info=True)
-        raise HTTPException(
+        return JSONResponse(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Internal server error"
+            content={
+                "detail": "Internal server error",
+                "error_code": "INTERNAL_ERROR",
+                "timestamp": time.strftime("%Y-%m-%dT%H:%M:%S.000Z", time.gmtime())
+            }
         )
     finally:
         # Clean up

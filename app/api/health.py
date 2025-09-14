@@ -10,7 +10,7 @@ from ..models.schemas import HealthResponse
 from ..services.prediction import PneumoniaPredictionService
 from ..core.settings import settings
 from ..core.logger import get_logger
-from ..docs.health_metadata import HealthMetadata
+from ..docs.sections.health_metadata import HealthMetadata
 
 logger = get_logger(__name__)
 router = APIRouter()

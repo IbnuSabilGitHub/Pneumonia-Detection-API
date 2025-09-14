@@ -4,7 +4,7 @@ Security Statistics Endpoint
 
 from datetime import datetime
 from fastapi import APIRouter, HTTPException, status
-from ..docs.stat_metadata import StatMetadata
+from ..docs.sections.stat_metadata import StatMetadata
 from ..models.schemas import SecurityStatsResponse, SecurityStatsErrorResponse
 
 from ..core.logger import get_logger
@@ -21,7 +21,7 @@ stat_metadata = StatMetadata.get_metadata()
 )
 async def get_security_stats() -> SecurityStatsResponse:
     """
-    **📊 Comprehensive Security Analytics Dashboard**
+    **omprehensive Security Analytics Dashboard**
     
     Provides detailed statistical analysis and metrics of the security protection
     system including threat patterns, attack detection results, and system performance.

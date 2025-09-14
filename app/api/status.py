@@ -3,7 +3,7 @@ Security Status Endpoint
 """
 from datetime import datetime
 from fastapi import APIRouter, HTTPException, status
-from ..docs.status_metadata import StatusMetadata
+from ..docs.sections.status_metadata import StatusMetadata
 from ..models.schemas import SecurityStatusResponse, SecurityErrorResponse
 
 from ..core.logger import get_logger

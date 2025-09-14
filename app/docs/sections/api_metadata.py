@@ -1,5 +1,5 @@
 from typing import Dict, Any
-from ..core.settings import settings
+from ...core.settings import settings
 
 class APIMetadata:
     """Manages API documentation and metadata."""

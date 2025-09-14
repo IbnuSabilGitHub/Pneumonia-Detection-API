@@ -4,9 +4,15 @@ from slowapi.util import get_remote_address
 
 from ..services.prediction import PneumoniaPredictionService
 from ..core.logger import get_logger
-from ..docs.prediction_metadata import PredictionMetadata
+from ..docs.sections.prediction_metadata import PredictionMetadata
 from ..utils.get_prediction_service import get_prediction_service
-from ..docs.model_info_metadata import ModelInfoMetadata
+from ..docs.sections.model_info_metadata import ModelInfoMetadata
+from ..models.schemas import (
+    ModelInfoResponse,
+    ModelInfoValidationErrorResponse,
+    ModelInfoNotFoundResponse,
+    ModelInfoServiceUnavailableResponse
+)
 
 logger = get_logger(__name__)
 router = APIRouter()
@@ -17,8 +23,16 @@ model_info_metadata = ModelInfoMetadata.get_metadata()
 
 @router.get(
     "/model/info",
+    response_model=ModelInfoResponse,
     tags=["Model"],
-    **model_info_metadata
+    responses={
+        404: {"model": ModelInfoNotFoundResponse},
+        422: {"model": ModelInfoValidationErrorResponse}, 
+        503: {"model": ModelInfoServiceUnavailableResponse}
+    },
+    summary=model_info_metadata.get("summary", ""),
+    description=model_info_metadata.get("description", ""),
+    response_description=model_info_metadata.get("response_description", "")
 )
 async def get_model_info(
     prediction_service: PneumoniaPredictionService = Depends(get_prediction_service)

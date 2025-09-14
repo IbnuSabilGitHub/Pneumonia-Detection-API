@@ -1,85 +1,26 @@
 """
-Pydantic models for request/response validation.
+Pydantic models for request/response validation with ReDoc compatibility.
 """
 from pydantic import BaseModel, Field
 from typing import Dict, Optional, List
+import time
 
 
-class PredictionResponse(BaseModel):
-    """
-    **AI Pneumonia Detection Response**
+class BaseErrorResponse(BaseModel):
+    """Base error response with common fields for consistency."""
     
-    Comprehensive response model containing AI analysis results, confidence metrics,
-    and medical recommendations for chest X-ray pneumonia detection.
-    
-    **Fields:**
-    - **prediction**: Primary AI classification result
-    - **confidence**: Numerical confidence level (0.0-1.0)
-    - **probabilities**: Detailed class probability breakdown
-    - **medical_recommendation**: Contextual medical guidance
-    - **model_version**: AI model version identifier
-    - **model_type**: Specific model architecture used
-    - **disclaimer**: Important medical disclaimer text
-    
-    **Medical Disclaimer:**
-    All predictions are for educational/research purposes only.
-    Never use as substitute for professional medical diagnosis.
-    """
-    
-    prediction: str = Field(
+    detail: str = Field(
         ..., 
-        description="AI classification result",
-        example="NORMAL",
-        pattern="^(NORMAL|PNEUMONIA)$"
+        description="Human-readable error message explaining what went wrong"
     )
-    confidence: float = Field(
-        ..., 
-        ge=0.0, 
-        le=1.0, 
-        description="AI confidence score (0.0=uncertain, 1.0=highly confident)",
-        example=0.92
-    )
-    probabilities: Dict[str, float] = Field(
-        ..., 
-        description="Individual class probabilities breakdown",
-        example={"NORMAL": 0.92, "PNEUMONIA": 0.08}
-    )
-    medical_recommendation: str = Field(
-        ..., 
-        description="Contextual medical guidance based on AI results",
-        example="Normal results - maintain regular health checkups"
-    )
-    model_version: str = Field(
-        default="v1.0", 
-        description="AI model version used for analysis",
-        example="v1.0"
-    )
-    model_type: str = Field(
+    error_code: str = Field(
         ...,
-        description="Specific AI model architecture (standard or efficientnet_b0)",
-        example="standard",
-        pattern="^(standard|efficientnet_b0)$"
+        description="Machine-readable error code for programmatic handling"
     )
-    disclaimer: str = Field(
-        default="This model is for educational purposes only. Consult a healthcare professional for medical advice.",
-        description="Important medical disclaimer",
+    timestamp: str = Field(
+        default_factory=lambda: time.strftime("%Y-%m-%dT%H:%M:%S.000Z", time.gmtime()),
+        description="Error occurrence timestamp in ISO 8601 format"
     )
-    
-    class Config:
-        json_schema_extra = {
-            "example": {
-                "prediction": "NORMAL",
-                "confidence": 0.92,
-                "probabilities": {
-                    "NORMAL": 0.92,
-                    "PNEUMONIA": 0.08
-                },
-                "medical_recommendation": "Normal results - maintain regular health checkups",
-                "model_version": "v1.0",
-                "model_type": "standard",
-                "disclaimer": "This model is for educational purposes only. Consult a healthcare professional for medical advice."
-            }
-        }
 
 
 class HealthResponse(BaseModel):
@@ -135,6 +76,63 @@ class HealthResponse(BaseModel):
         }
 
 
+class AdvancedProtection(BaseModel):
+    """Detailed security metrics and protection data."""
+    
+    global_attack_score: float = Field(
+        ...,
+        description="Global attack probability score (0.0-1.0)",
+        ge=0.0, le=1.0,
+        example=0.15
+    )
+    requests_per_minute: int = Field(
+        ...,
+        description="Total requests in the last minute",
+        ge=0,
+        example=23
+    )
+    recent_unique_ips: int = Field(
+        ...,
+        description="Number of unique IP addresses in recent activity",
+        ge=0,
+        example=8
+    )
+    blocked_fingerprints: int = Field(
+        ...,
+        description="Number of currently blocked request fingerprints",
+        ge=0,
+        example=2
+    )
+    storage_type: str = Field(
+        ...,
+        description="Type of storage backend being used",
+        example="memory"
+    )
+    avg_response_time_ms: Optional[float] = Field(
+        None,
+        description="Average response time in milliseconds",
+        example=85.0
+    )
+    total_requests_24h: Optional[int] = Field(
+        None,
+        description="Total requests in the last 24 hours",
+        example=1847
+    )
+    
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "global_attack_score": 0.15,
+                "requests_per_minute": 23,
+                "recent_unique_ips": 8,
+                "blocked_fingerprints": 2,
+                "storage_type": "memory",
+                "avg_response_time_ms": 85.0,
+                "total_requests_24h": 1847
+            }
+        }
+
+
 class SecurityStatusResponse(BaseModel):
     """
     **Advanced Security System Status Response**
@@ -173,16 +171,9 @@ class SecurityStatusResponse(BaseModel):
         description="Status timestamp in ISO format",
         example="2025-09-10T10:30:00.000Z"
     )
-    advanced_protection: Dict = Field(
+    advanced_protection: AdvancedProtection = Field(
         ..., 
-        description="Detailed security metrics and protection data",
-        example={
-            "global_attack_score": 0.15,
-            "requests_per_minute": 23,
-            "recent_unique_ips": 8,
-            "blocked_fingerprints": 2,
-            "storage_type": "memory"
-        }
+        description="Detailed security metrics and protection data"
     )
     protection_features: List[str] = Field(
         ..., 
@@ -216,7 +207,7 @@ class SecurityStatusResponse(BaseModel):
                     "recent_unique_ips": 8,
                     "blocked_fingerprints": 2,
                     "storage_type": "memory",
-                    "avg_response_time_ms": 85,
+                    "avg_response_time_ms": 85.0,
                     "total_requests_24h": 1847
                 },
                 "protection_features": [
@@ -233,7 +224,7 @@ class SecurityStatusResponse(BaseModel):
         }
 
 
-class SecurityErrorResponse(BaseModel):
+class SecurityErrorResponse(BaseErrorResponse):
     """
     **Security System Error Response**
     
@@ -246,270 +237,349 @@ class SecurityErrorResponse(BaseModel):
         description="API service name",
         example="Pneumonia Detection API"
     )
-    security_status: str = Field(
+    service_status: str = Field(
         ..., 
         description="Security system status indicating error state",
         example="not_initialized"
     )
-    timestamp: str = Field(
+    
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "detail": "Rate limiter not initialized",
+                "error_code": "RATE_LIMITER_NOT_INITIALIZED",
+                "timestamp": "2025-09-10T10:30:00.000Z",
+                "service": "Pneumonia Detection API",
+                "service_status": "not_initialized"
+            }
+        }
+
+
+# === MODEL INFO ENDPOINT RESPONSE SCHEMAS ===
+
+class ModelInfoResponse(BaseModel):
+    """
+    **AI Model Information Response**
+    
+    Comprehensive response containing detailed information about the
+    currently loaded AI model including configuration, architecture,
+    and performance characteristics.
+    """
+    
+    loaded: bool = Field(
         ..., 
-        description="Error timestamp in ISO format",
+        description="Model loading status",
+        example=True
+    )
+    
+    model_path: Optional[str] = Field(
+        None,
+        description="Path to the loaded ONNX model file",
+        example="models/pneumonia_model_efficientnet_b0.onnx"
+    )
+    
+    input_name: Optional[str] = Field(
+        None,
+        description="Model input tensor name",
+        example="input"
+    )
+    
+    output_name: Optional[str] = Field(
+        None,
+        description="Model output tensor name", 
+        example="output"
+    )
+    
+    mean: Optional[float] = Field(
+        None,
+        description="Normalization mean value used for preprocessing",
+        example=0.480
+    )
+    
+    std: Optional[float] = Field(
+        None,
+        description="Normalization standard deviation for preprocessing",
+        example=0.237
+    )
+    
+    target_size: Optional[List[int]] = Field(
+        None,
+        description="Expected input image dimensions [height, width]",
+        example=[192, 192]
+    )
+    
+    labels: Optional[List[str]] = Field(
+        None,
+        description="Model output class labels",
+        example=["NORMAL", "PNEUMONIA"]
+    )
+    
+    model_type: Optional[str] = Field(
+        None,
+        description="Model architecture type",
+        example="efficientnet_b0"
+    )
+    
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "loaded": True,
+                "model_path": "models/pneumonia_model_efficientnet_b0.onnx",
+                "input_name": "input",
+                "output_name": "output",
+                "mean": 0.480,
+                "std": 0.237,
+                "target_size": [192, 192],
+                "labels": ["NORMAL", "PNEUMONIA"],
+                "model_type": "efficientnet_b0"
+            }
+        }
+
+
+class ValidationErrorDetail(BaseModel):
+    """Individual validation error information."""
+    
+    loc: List[str] = Field(
+        ...,
+        description="Location of the error in the request",
+        example=["query", "model"]
+    )
+    msg: str = Field(
+        ...,
+        description="Validation error message",
+        example="Invalid model type specified"
+    )
+    type: str = Field(
+        ...,
+        description="Type of validation error",
+        example="value_error"
+    )
+
+
+class ModelInfoValidationErrorResponse(BaseModel):
+    """
+    **Model Info Validation Error Response**
+    
+    Response returned when the model info request fails validation.
+    """
+    
+    detail: List[ValidationErrorDetail] = Field(
+        ..., 
+        description="List of validation errors with detailed information"
+    )
+    
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "detail": [
+                    {
+                        "loc": ["query", "model"],
+                        "msg": "Invalid model type specified",
+                        "type": "value_error"
+                    }
+                ]
+            }
+        }
+
+
+class ModelInfoNotFoundResponse(BaseErrorResponse):
+    """
+    **Model Info Not Found Error Response**
+    
+    Response returned when a specific model is not found.
+    """
+    
+    available_models: Optional[List[str]] = Field(
+        None,
+        description="List of available model types",
+        example=["standard", "efficientnet_b0"]
+    )
+    
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "detail": "Model 'invalid_model' not found",
+                "error_code": "MODEL_NOT_FOUND",
+                "available_models": ["standard", "efficientnet_b0"],
+                "timestamp": "2025-09-13T10:30:00.000Z"
+            }
+        }
+
+
+class ModelInfoServiceUnavailableResponse(BaseErrorResponse):
+    """
+    **Model Info Service Unavailable Error Response**
+    
+    Response returned when the model information service is not available.
+    """
+    
+    service_status: Optional[str] = Field(
+        None,
+        description="Current service status",
+        example="not_initialized"
+    )
+    
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "detail": "Prediction service not available",
+                "error_code": "SERVICE_UNAVAILABLE",
+                "service_status": "not_initialized",
+                "timestamp": "2025-09-13T10:30:00.000Z"
+            }
+        }
+
+
+# === SECURITY STATS ENDPOINT RESPONSE SCHEMAS ===
+
+class SecurityMetrics(BaseModel):
+    """Security statistics and metrics data."""
+    
+    total_requests: int = Field(
+        ...,
+        description="Total number of requests processed",
+        ge=0,
+        example=1500
+    )
+    blocked_requests: int = Field(
+        ...,
+        description="Number of requests blocked by security system",
+        ge=0,
+        example=25
+    )
+    unique_ips: int = Field(
+        ...,
+        description="Number of unique IP addresses seen",
+        ge=0,
+        example=120
+    )
+    rate_limited_requests: int = Field(
+        ...,
+        description="Number of requests blocked by rate limiting",
+        ge=0,
+        example=15
+    )
+    attack_attempts: int = Field(
+        ...,
+        description="Number of detected attack attempts",
+        ge=0,
+        example=8
+    )
+    average_response_time: float = Field(
+        ...,
+        description="Average response time in milliseconds",
+        ge=0.0,
+        example=95.5
+    )
+    uptime_hours: float = Field(
+        ...,
+        description="System uptime in hours",
+        ge=0.0,
+        example=72.5
+    )
+    
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "total_requests": 1500,
+                "blocked_requests": 25,
+                "unique_ips": 120,
+                "rate_limited_requests": 15,
+                "attack_attempts": 8,
+                "average_response_time": 95.5,
+                "uptime_hours": 72.5
+            }
+        }
+
+
+class SecurityStatsResponse(BaseModel):
+    """
+    **Security Statistics Response**
+    
+    Comprehensive security statistics response providing detailed metrics
+    about the API's security performance, request patterns, and threat
+    detection effectiveness.
+    
+    **Metrics Included:**
+    - Request volume and patterns
+    - Security blocking statistics
+    - Attack detection and prevention
+    - Performance metrics
+    - System uptime information
+    """
+    
+    service: str = Field(
+        ...,
+        description="API service name",
+        example="Pneumonia Detection API"
+    )
+    timestamp: str = Field(
+        ...,
+        description="Statistics timestamp in ISO format",
         example="2025-09-10T10:30:00.000Z"
     )
-    error: str = Field(
-        ..., 
-        description="Detailed error message",
-        example="Rate limiter not initialized"
+    security_metrics: SecurityMetrics = Field(
+        ...,
+        description="Detailed security statistics and metrics"
+    )
+    status: str = Field(
+        ...,
+        description="Security system operational status",
+        example="active",
+        pattern="^(active|not_initialized|degraded)$"
+    )
+    storage_type: str = Field(
+        ...,
+        description="Type of storage backend being used",
+        example="memory"
     )
     
     class Config:
         json_schema_extra = {
             "example": {
                 "service": "Pneumonia Detection API",
-                "security_status": "not_initialized",
                 "timestamp": "2025-09-10T10:30:00.000Z",
-                "error": "Rate limiter not initialized"
-            }
-        }
-        
-class SecurityStatsResponse(BaseModel):
-    """
-    **� Advanced Security Analytics Response**
-    
-    Comprehensive security statistics response providing detailed analysis of 
-    security events, threat patterns, and protection effectiveness over time.
-    
-    **Analytics Categories:**
-    - **Threat Analysis**: Global attack probability scoring and interpretation
-    - **Traffic Analytics**: Real-time request monitoring and IP tracking
-    - **Protection Effectiveness**: Blocked requests and success rates
-    - **System Performance**: Response times and resource utilization
-    
-    **Threat Level Interpretation:**
-    - **LOW** (0.0-0.3): Normal operations, standard monitoring
-    - **MEDIUM** (0.3-0.7): Elevated vigilance, possible threats  
-    - **HIGH** (0.7-1.0): Active attacks, enhanced protection mode
-    """
-    
-    security_metrics: Dict = Field(
-        ..., 
-        description="📈 Raw security metrics and measurements",
-        example={
-            "global_attack_score": 0.25,
-            "requests_per_minute": 45,
-            "recent_unique_ips": 12,
-            "blocked_fingerprints": 3,
-            "storage_type": "memory",
-            "avg_response_time_ms": 85,
-            "total_requests_24h": 2847
-        }
-    )
-    
-    timestamp: str = Field(
-        ..., 
-        description="⏰ Analytics timestamp in ISO format",
-        example="2025-09-12T10:30:00.000Z"
-    )
-    
-    interpretation: Dict = Field(
-        ..., 
-        description="🎯 Human-readable interpretation of security metrics",
-        example={
-            "attack_score": {
-                "value": 0.25,
-                "level": "LOW",
-                "description": "Global attack probability score (0.0-1.0)"
-            },
-            "request_rate": {
-                "value": 45,
-                "description": "Total requests in the last minute"
-            },
-            "unique_ips": {
-                "value": 12,
-                "description": "Number of unique IP addresses in recent activity"
-            },
-            "blocked_count": {
-                "value": 3,
-                "description": "Number of currently blocked request fingerprints"
-            }
-        }
-    )
-    
-    analytics_summary: Optional[Dict] = Field(
-        None,
-        description="📊 Optional summary analytics for extended periods",
-        example={
-            "hourly_trend": "increasing",
-            "daily_average": 42.5,
-            "threat_level_changes": 3
-        }
-    )
-    
-    class Config:
-        json_schema_extra = {
-            "example": {
                 "security_metrics": {
-                    "global_attack_score": 0.25,
-                    "requests_per_minute": 45,
-                    "recent_unique_ips": 12,
-                    "blocked_fingerprints": 3,
-                    "storage_type": "memory",
-                    "avg_response_time_ms": 85,
-                    "total_requests_24h": 2847
+                    "total_requests": 1500,
+                    "blocked_requests": 25,
+                    "unique_ips": 120,
+                    "rate_limited_requests": 15,
+                    "attack_attempts": 8,
+                    "average_response_time": 95.5,
+                    "uptime_hours": 72.5
                 },
-                "timestamp": "2025-09-12T10:30:00.000Z",
-                "interpretation": {
-                    "attack_score": {
-                        "value": 0.25,
-                        "level": "LOW",
-                        "description": "Global attack probability score (0.0-1.0)"
-                    },
-                    "request_rate": {
-                        "value": 45,
-                        "description": "Total requests in the last minute"
-                    },
-                    "unique_ips": {
-                        "value": 12,
-                        "description": "Number of unique IP addresses in recent activity"
-                    },
-                    "blocked_count": {
-                        "value": 3,
-                        "description": "Number of currently blocked request fingerprints"
-                    }
-                },
-                "analytics_summary": {
-                    "hourly_trend": "increasing",
-                    "daily_average": 42.5,
-                    "threat_level_changes": 3
-                }
+                "status": "active",
+                "storage_type": "memory"
             }
         }
 
 
-class SecurityStatsErrorResponse(BaseModel):
+class SecurityStatsErrorResponse(BaseErrorResponse):
     """
     **Security Statistics Error Response**
     
-    Error response when security statistics cannot be retrieved due to
-    system issues or initialization problems.
+    Error response when security statistics cannot be retrieved
+    due to system issues or initialization problems.
     """
     
-    error: str = Field(
-        ..., 
-        description="❌ Detailed error message",
-        example="Rate limiter not initialized"
+    service: str = Field(
+        ...,
+        description="API service name",
+        example="Pneumonia Detection API"
     )
-    
-    error_code: Optional[str] = Field(
-        None,
-        description="🏷️ Application-specific error code", 
-        example="RATE_LIMITER_NOT_INITIALIZED"
-    )
-    
-    timestamp: str = Field(
-        ..., 
-        description="⏰ Error timestamp in ISO format",
-        example="2025-09-12T10:30:00.000Z"
-    )
-    
-    details: Optional[Dict] = Field(
-        None,
-        description="📋 Additional error context and debugging information",
-        example={
-            "component": "rate_limiter",
-            "initialization_status": "failed"
-        }
+    service_status: str = Field(
+        ...,
+        description="Security system status indicating error state",
+        example="not_initialized"
     )
     
     class Config:
         json_schema_extra = {
             "example": {
-                "error": "Rate limiter not initialized",
-                "error_code": "RATE_LIMITER_NOT_INITIALIZED",
-                "timestamp": "2025-09-12T10:30:00.000Z",
-                "details": {
-                    "component": "rate_limiter", 
-                    "initialization_status": "failed"
-                }
-            }
-        }
-
-
-class RateLimitErrorResponse(BaseModel):
-    """
-    **Rate Limit Exceeded Response**
-    
-    Response returned when API rate limits are exceeded.
-    Includes details about the limit and when to retry.
-    """
-    
-    error: str = Field(
-        ..., 
-        description="Error message",
-        example="Rate limit exceeded"
-    )
-    
-    message: str = Field(
-        ..., 
-        description="Detailed reason for rate limiting",
-        example="Too many requests from IP address"
-    )
-    
-    client_ip: str = Field(
-        ..., 
-        description="Client IP address that exceeded the limit",
-        example="192.168.1.1"
-    )
-    
-    endpoint: str = Field(
-        ..., 
-        description="Endpoint that was rate limited",
-        example="/pneumonia/predict"
-    )
-    
-    timestamp: float = Field(
-        ..., 
-        description="Unix timestamp when rate limit was triggered",
-        example=1694537400.123
-    )
-    
-    details: Dict = Field(
-        ..., 
-        description="Additional rate limiting details",
-        example={
-            "rate_limit": "5 per minute",
-            "retry_after": 60
-        }
-    )
-    
-    class Config:
-        json_schema_extra = {
-            "example": {
-                "error": "Rate limit exceeded",
-                "message": "Too many requests from IP address",
-                "client_ip": "192.168.1.1",
-                "endpoint": "/pneumonia/predict", 
-                "timestamp": 1694537400.123,
-                "details": {
-                    "rate_limit": "5 per minute",
-                    "retry_after": 60
-                }
-            }
-        }
-
-
-class SecurityStatResponse(BaseModel):
-    """Response model for error cases."""
-    
-    detail: str = Field(..., description="Error message")
-    error_code: Optional[str] = Field(None, description="Application-specific error code")
-    timestamp: Optional[str] = Field(None, description="Error timestamp")
-    
-    class Config:
-        json_schema_extra = {
-            "example": {
-                "detail": "File size exceeds limit of 10.0 MB",
-                "error_code": "FILE_TOO_LARGE",
-                "timestamp": "2025-08-19T10:30:00Z"
+                "detail": "Security statistics service not available",
+                "error_code": "SECURITY_STATS_UNAVAILABLE",
+                "timestamp": "2025-09-10T10:30:00.000Z",
+                "service": "Pneumonia Detection API",
+                "service_status": "not_initialized"
             }
         }

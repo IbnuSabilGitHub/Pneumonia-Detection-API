@@ -74,21 +74,30 @@ architecture details, performance metrics, and training statistics.</p>
             "description": "Model information retrieved successfully",
             "content": {
                 "application/json": {
-                    "example": {
-                        "loaded": "true",
-                        "model_path": "models/pneumonia_model_efficientnet_b0.onnx",
-                        "input_name": "input",
-                        "output_name": "output",
-                        "mean": 0.480,
-                        "std": 0.237,
-                        "target_size": [
-                            192,
-                            192
-                        ],
-                        "labels": [
-                            "NORMAL",
-                            "PNEUMONIA"
-                        ]
+                    "schema": {
+                        "$ref": "#/components/schemas/ModelInfoResponse"
+                    },
+                    "examples": {
+                        "model_loaded": {
+                            "summary": "Model successfully loaded",
+                            "value": {
+                                "loaded": True,
+                                "model_path": "models/pneumonia_model_efficientnet_b0.onnx",
+                                "input_name": "input",
+                                "output_name": "output",
+                                "mean": 0.480,
+                                "std": 0.237,
+                                "target_size": [192, 192],
+                                "labels": ["NORMAL", "PNEUMONIA"],
+                                "model_type": "efficientnet_b0"
+                            }
+                        },
+                        "model_not_loaded": {
+                            "summary": "Model not loaded",
+                            "value": {
+                                "loaded": False
+                            }
+                        }
                     }
                 }
             }
@@ -100,9 +109,14 @@ architecture details, performance metrics, and training statistics.</p>
             "description": "Model not found",
             "content": {
                 "application/json": {
+                    "schema": {
+                        "$ref": "#/components/schemas/ModelInfoNotFoundResponse"
+                    },
                     "example": {
                         "detail": "Model 'invalid_model' not found",
-                        "error_code": "MODEL_NOT_FOUND"
+                        "error_code": "MODEL_NOT_FOUND",
+                        "available_models": ["standard", "efficientnet_b0"],
+                        "timestamp": "2025-09-13T10:30:00.000Z"
                     }
                 }
             }
@@ -114,9 +128,14 @@ architecture details, performance metrics, and training statistics.</p>
             "description": "Prediction service unavailable",
             "content": {
                 "application/json": {
+                    "schema": {
+                        "$ref": "#/components/schemas/ModelInfoServiceUnavailableResponse"
+                    },
                     "example": {
                         "detail": "Prediction service not available",
-                        "error_code": "SERVICE_UNAVAILABLE"
+                        "error_code": "SERVICE_UNAVAILABLE",
+                        "service_status": "not_initialized",
+                        "timestamp": "2025-09-13T10:30:00.000Z"
                     }
                 }
             }
@@ -128,6 +147,9 @@ architecture details, performance metrics, and training statistics.</p>
             "description": "Validation Error",
             "content": {
                 "application/json": {
+                    "schema": {
+                        "$ref": "#/components/schemas/ModelInfoValidationErrorResponse"
+                    },
                     "example": {
                         "detail": [
                             {

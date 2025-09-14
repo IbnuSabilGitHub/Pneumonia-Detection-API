@@ -3,14 +3,14 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI, status
 from fastapi.responses import JSONResponse
 from .core.middleware_factory import MiddlewareFactory
-from .docs.api_metadata import APIMetadata
+from .docs.sections.api_metadata import APIMetadata
 from .core.settings import settings
 from .core.logger import setup_logging, get_logger
 from .api import health, prediction, status, stats, model_info
 
 from .core.startup_manager import StartupManager
 from .core.dependencies import get_dependencies
-
+from .openapi import custom_openapi
 # Setup logging
 setup_logging()
 logger = get_logger(__name__)
@@ -95,7 +95,7 @@ def create_app() -> FastAPI:
     
     # create FastAPi metadata from template
     app = FastAPI(lifespan=lifespan, **app_metadata)
-    
+    app.openapi = lambda: custom_openapi(app)
     # Setup all middleware using factory
     MiddlewareFactory.setup_all_middleware(app)
     
