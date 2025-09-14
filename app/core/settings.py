@@ -70,6 +70,7 @@ class Settings(BaseSettings):
     
     # Cache
     cache_duration: int = 300  # 5 minutes
+    file_hash_cache_max_size: int = 5000  # Maximum number of unique file hashes to retain
     
     # Logging
     log_level: str = "INFO"

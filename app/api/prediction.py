@@ -28,6 +28,7 @@ from ..core.logger import get_logger
 from ..docs.sections.prediction_metadata import PredictionMetadata
 from ..utils.get_prediction_service import get_prediction_service
 from ..models.prediction_schemas import PredictionResponse
+from ..models.error_codes import ErrorCode
 
 logger = get_logger(__name__)
 router = APIRouter()
@@ -100,9 +101,20 @@ async def predict_pneumonia(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             content={
                 "detail": "Prediction service is not available",
-                "error_code": "SERVICE_UNAVAILABLE",
+                "error_code": ErrorCode.SERVICE_UNAVAILABLE,
                 "service_status": "not_initialized",
-                "retry_after": 30,
+                "timestamp": time.strftime("%Y-%m-%dT%H:%M:%S.000Z", time.gmtime())
+            }
+        )
+        
+    if not prediction_service.is_loaded():
+        logger.error("Prediction model not loaded")
+        return JSONResponse(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            content={
+                "detail": "AI model is not loaded or failed to initialize",
+                "error_code": ErrorCode.MODEL_NOT_LOADED,
+                "service_status": "model_not_loaded",
                 "timestamp": time.strftime("%Y-%m-%dT%H:%M:%S.000Z", time.gmtime())
             }
         )
@@ -113,7 +125,7 @@ async def predict_pneumonia(
             status_code=status.HTTP_400_BAD_REQUEST,
             content={
                 "detail": "No file provided",
-                "error_code": "MISSING_FILE",
+                "error_code":  ErrorCode.NO_FILE_PROVIDED,
                 "timestamp": time.strftime("%Y-%m-%dT%H:%M:%S.000Z", time.gmtime())
             }
         )
@@ -124,7 +136,7 @@ async def predict_pneumonia(
             status_code=status.HTTP_400_BAD_REQUEST,
             content={
                 "detail": f"Unsupported file type. Allowed: {', '.join(settings.allowed_extensions)}",
-                "error_code": "INVALID_FILE_FORMAT",
+                "error_code": ErrorCode.INVALID_FILE_FORMAT,
                 "timestamp": time.strftime("%Y-%m-%dT%H:%M:%S.000Z", time.gmtime())
             }
         )
@@ -141,7 +153,7 @@ async def predict_pneumonia(
                 status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
                 content={
                     "detail": f"File size exceeds limit of {max_size_mb:.1f} MB",
-                    "error_code": "FILE_TOO_LARGE",
+                    "error_code": ErrorCode.FILE_TOO_LARGE,
                     "max_size_mb": max_size_mb,
                     "actual_size_mb": round(file_size_mb, 2),
                     "timestamp": time.strftime("%Y-%m-%dT%H:%M:%S.000Z", time.gmtime())
@@ -150,12 +162,14 @@ async def predict_pneumonia(
         
         # Check for duplicate uploads
         file_hash = calculate_file_hash(contents)
-        if file_hash_cache.is_duplicate(file_hash):
+        if file_hash_cache.is_duplicate(file_hash, settings.cache_duration):
             return JSONResponse(
                 status_code=status.HTTP_409_CONFLICT,
                 content={
                     "detail": "Duplicate file detected. Please wait before uploading the same image again.",
-                    "error_code": "INVALID_MODEL",
+                    "error_code": ErrorCode.DUPLICATE_FILE,
+                    "retry_after": settings.cache_duration,
+                    "file_hash": file_hash,
                     "timestamp": time.strftime("%Y-%m-%dT%H:%M:%S.000Z", time.gmtime())
                 }
             )
@@ -171,7 +185,7 @@ async def predict_pneumonia(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 content={
                     "detail": "Image does not appear to be a valid chest X-ray",
-                    "error_code": "INVALID_IMAGE_CONTENT",
+                    "error_code": ErrorCode.INVALID_IMAGE_CONTENT,
                     "timestamp": time.strftime("%Y-%m-%dT%H:%M:%S.000Z", time.gmtime())
                 }
             )
@@ -203,7 +217,7 @@ async def predict_pneumonia(
             status_code=status.HTTP_400_BAD_REQUEST,
             content={
                 "detail": str(e),
-                "error_code": "FILE_VALIDATION_ERROR",
+                "error_code": ErrorCode.FILE_TOO_LARGE if "size" in str(e).lower() else ErrorCode.INVALID_FILE_FORMAT,
                 "timestamp": time.strftime("%Y-%m-%dT%H:%M:%S.000Z", time.gmtime())
             }
         )
@@ -213,7 +227,7 @@ async def predict_pneumonia(
             status_code=status.HTTP_400_BAD_REQUEST,
             content={
                 "detail": str(e),
-                "error_code": "IMAGE_VALIDATION_ERROR",
+                "error_code": ErrorCode.IMAGE_VALIDATION_ERROR,
                 "timestamp": time.strftime("%Y-%m-%dT%H:%M:%S.000Z", time.gmtime())
             }
         )
@@ -223,7 +237,7 @@ async def predict_pneumonia(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             content={
                 "detail": "Failed to process image",
-                "error_code": "PREDICTION_ERROR",
+                "error_code": ErrorCode.PREDICTION_FAILED,
                 "timestamp": time.strftime("%Y-%m-%dT%H:%M:%S.000Z", time.gmtime())
             }
         )
@@ -233,7 +247,7 @@ async def predict_pneumonia(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             content={
                 "detail": "Internal server error",
-                "error_code": "INTERNAL_ERROR",
+                "error_code": ErrorCode.INTERNAL_SERVER_ERROR,
                 "timestamp": time.strftime("%Y-%m-%dT%H:%M:%S.000Z", time.gmtime())
             }
         )

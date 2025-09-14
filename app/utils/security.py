@@ -14,10 +14,16 @@ logger = get_logger(__name__)
 
 
 class FileHashCache:
-    """Cache for file hashes to detect duplicates."""
-    
-    def __init__(self):
+    """Cache for file hashes to detect duplicates with size limiting.
+
+    Implements a simple time-based duplicate window plus a hard cap on
+    the number of stored unique hashes to prevent unbounded growth.
+    Oldest entries (by timestamp) are evicted when the cap is exceeded.
+    """
+
+    def __init__(self, max_size: int | None = None):
         self.cache: Dict[str, float] = {}
+        self.max_size = max_size or settings.file_hash_cache_max_size
     
     def is_duplicate(self, file_hash: str, cache_duration: int = None) -> bool:
         """
@@ -38,8 +44,10 @@ class FileHashCache:
             if current_time - last_upload_time < cache_duration:
                 return True
         
-        # Update cache
+        # Update cache (insert/update timestamp)
         self.cache[file_hash] = current_time
+        # Enforce size after insertion
+        self._enforce_size_limit()
         return False
     
     def cleanup_expired(self, cache_duration: int = None) -> int:
@@ -54,12 +62,36 @@ class FileHashCache:
         
         for key in expired_keys:
             del self.cache[key]
-        
-        return len(expired_keys)
+
+        removed = len(expired_keys)
+        if removed:
+            logger.debug(f"Removed {removed} expired file hash entries")
+
+        # After removing expired entries, still enforce size (in case many new came in)
+        self._enforce_size_limit()
+        return removed
     
     def get_cache_size(self) -> int:
         """Get current cache size."""
         return len(self.cache)
+
+    def _enforce_size_limit(self) -> None:
+        """Ensure the cache does not exceed configured max_size.
+
+        Strategy:
+        - If size <= max_size: do nothing
+        - Else: sort items by timestamp ascending (oldest first) and remove oldest
+          until size == max_size.
+        """
+        if self.max_size and len(self.cache) > self.max_size:
+            overflow = len(self.cache) - self.max_size
+            # Sort by timestamp (value) ascending (oldest first)
+            oldest = sorted(self.cache.items(), key=lambda kv: kv[1])[:overflow]
+            for key, _ in oldest:
+                self.cache.pop(key, None)
+            logger.warning(
+                f"FileHashCache size exceeded limit; evicted {overflow} oldest entries (max={self.max_size})"
+            )
 
 
 def get_client_ip(request: Request) -> str:

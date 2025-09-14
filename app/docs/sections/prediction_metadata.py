@@ -175,7 +175,7 @@ Always consult qualified healthcare professionals for medical decisions.</p>
                     "summary": "No file in request",
                     "value": {
                         "detail": "No file provided",
-                        "error_code": ErrorCode.MISSING_FILE,
+                        "error_code": ErrorCode.NO_FILE_PROVIDED,
                         "timestamp": "2025-09-13T10:30:00.000Z",
                     },
                 },
@@ -279,7 +279,6 @@ Always consult qualified healthcare professionals for medical decisions.</p>
                         "detail": "Prediction service is not available",
                         "error_code": ErrorCode.SERVICE_UNAVAILABLE,
                         "service_status": "not_initialized",
-                        "retry_after": 30,
                         "timestamp": "2025-09-13T10:30:00.000Z"
                     }
                 },
@@ -289,7 +288,6 @@ Always consult qualified healthcare professionals for medical decisions.</p>
                         "detail": "AI model is not loaded or failed to initialize",
                         "error_code": ErrorCode.MODEL_NOT_LOADED,
                         "service_status": "model_error",
-                        "retry_after": 60,
                         "timestamp": "2025-09-13T10:30:00.000Z"
                     }
                 }

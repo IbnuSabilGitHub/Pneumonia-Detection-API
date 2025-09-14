@@ -1,5 +1,6 @@
 import time
 from contextlib import asynccontextmanager
+import asyncio
 from fastapi import FastAPI, status
 from fastapi.responses import JSONResponse
 from .core.middleware_factory import MiddlewareFactory
@@ -7,6 +8,7 @@ from .docs.sections.api_metadata import APIMetadata
 from .core.settings import settings
 from .core.logger import setup_logging, get_logger
 from .api import health, prediction, status, stats, model_info
+from .utils.security import file_hash_cache
 
 from .core.startup_manager import StartupManager
 from .core.dependencies import get_dependencies
@@ -70,12 +72,36 @@ async def lifespan(app: FastAPI):
     else:
         logger.warning(f"⚠️ {startup_result['success_count']}/{startup_result['total_services']} services initialized")
     
+    # Start background task: periodic cleanup of expired file hash cache
+    cleanup_interval = max(60, getattr(settings, "memory_cleanup_interval", 300))  # ensure minimum interval
+    stop_event = asyncio.Event()
+
+    async def cache_cleanup_worker():
+        while not stop_event.is_set():
+            try:
+                removed = file_hash_cache.cleanup_expired()
+                if removed:
+                    logger.info(f"🧹 File hash cache cleanup removed {removed} expired entries")
+            except Exception as e:
+                logger.error(f"Cache cleanup worker error: {e}")
+            # Wait with cancellation awareness
+            try:
+                await asyncio.wait_for(stop_event.wait(), timeout=cleanup_interval)
+            except asyncio.TimeoutError:
+                continue
+
+    cleanup_task = asyncio.create_task(cache_cleanup_worker())
+
     yield
     
     # Shutdown
     logger.info("🛑 Application shutdown initiated")
     
     try:
+        # Signal and await cleanup task
+        stop_event.set()
+        if cleanup_task:
+            await cleanup_task
         await startup_manager.shutdown()
         logger.info("✅ Application shutdown completed successfully")
     except Exception as e:
