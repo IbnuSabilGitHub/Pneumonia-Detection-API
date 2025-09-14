@@ -1,5 +1,6 @@
 from typing import Dict, Any
 from ...models.error_codes import ErrorCode
+from ...docs.base_builder import build_response
 from ...models.prediction_schemas import (
     PredictionResponse,
     PredictionValidationErrorResponse,
@@ -10,7 +11,6 @@ from ...models.prediction_schemas import (
     PredictionServiceUnavailableResponse,
     PredictionInternalServerErrorResponse
 )
-from ...docs.base_builder import build_response
 
 class PredictionMetadata:
     """Metadata for documentations prediction penumonia endpoint."""
