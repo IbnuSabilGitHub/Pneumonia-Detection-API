@@ -6,11 +6,12 @@ from fastapi import APIRouter,  Depends
 from slowapi import Limiter
 from slowapi.util import get_remote_address
 
-from ..models.schemas import HealthResponse
 from ..services.prediction import PneumoniaPredictionService
 from ..core.settings import settings
 from ..core.logger import get_logger
 from ..docs.sections.health_metadata import HealthMetadata
+from ..models.health_schemas import HealthResponse
+
 
 logger = get_logger(__name__)
 router = APIRouter()
