@@ -5,7 +5,7 @@ Security Statistics Endpoint
 from datetime import datetime
 from fastapi import APIRouter, HTTPException, status
 from ..docs.sections.stat_metadata import StatMetadata
-from ..models.schemas import SecurityStatsResponse, SecurityStatsErrorResponse
+from ..models.security_schemes import SecurityStatsResponse
 
 from ..core.logger import get_logger
 
@@ -145,9 +145,15 @@ async def get_security_stats() -> SecurityStatsResponse:
             "storage_backend": security_metrics.get("storage_type", "unknown")
         }
     
+    # Determine storage type if available
+    storage_type = security_metrics.get("storage_backend") or security_metrics.get("storage_type") or "memory"
+
     return SecurityStatsResponse(
+        service="Pneumonia Detection API",
         security_metrics=security_metrics,
         timestamp=datetime.now().isoformat(),
+        status="active",
+        storage_type=storage_type,
         interpretation=interpretation,
         analytics_summary=analytics_summary
     )

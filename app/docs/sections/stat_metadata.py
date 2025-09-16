@@ -1,5 +1,7 @@
 from typing import Dict, Any
-
+from ..base_builder import build_response
+from ...models.error_codes import ErrorCode
+from ...models.security_schemes import SecurityStatsResponse, SecurityStatsErrorResponse
 
 class StatMetadata:
     """Metadata for documentations security statistics endpoint."""
@@ -89,59 +91,66 @@ Comprehensive security statistics and threat analysis
     @staticmethod
     def get_200_response() -> Dict[str, Any]:
         """Get 200 response description."""
-        return {
-            "description": "Security statistics retrieved successfully",
-            "content": {
-                "application/json": {
-                    "example": {
-                        "security_metrics": {
-                            "global_attack_score": 0.25,
-                            "requests_per_minute": 45,
-                            "recent_unique_ips": 12,
-                            "blocked_fingerprints": 3,
-                            "storage_type": "memory",
-                            "avg_response_time_ms": 85,
-                            "total_requests_24h": 2847
+        return build_response(
+            description= "Security statistics retrieved successfully",
+            model= SecurityStatsResponse,
+            example= {
+                "service": "Pneumonia Detection API",
+                "timestamp": "2025-09-05T10:30:00.000Z",
+                "security_metrics": {
+                    "global_attack_score": 0.25,
+                    "requests_per_minute": 45,
+                    "recent_unique_ips": 12,
+                    "blocked_fingerprints": 3,
+                    "storage_type": "memory",
+                    "avg_response_time_ms": 85,
+                    "total_requests_24h": 2847
+                },
+                "status": "active",
+                "storage_type": "memory",
+                "interpretation": {
+                    "attack_score": {
+                        "value": 0.25,
+                        "level": "LOW",
+                        "description": "Global attack probability score (0.0-1.0)"
                         },
-                        "timestamp": "2025-09-05T10:30:00.000Z",
-                        "interpretation": {
-                            "attack_score": {
-                                "value": 0.25,
-                                "level": "LOW",
-                                "description": "Global attack probability score (0.0-1.0)"
-                            },
-                            "request_rate": {
-                                "value": 45,
-                                "description": "Total requests in the last minute"
-                            },
-                            "unique_ips": {
-                                "value": 12,
-                                "description": "Number of unique IP addresses in recent activity"
-                            },
-                            "blocked_count": {
-                                "value": 3,
-                                "description": "Number of currently blocked request fingerprints"
-                            }
-                        }
+                    "request_rate": {
+                        "value": 45,
+                        "description": "Total requests in the last minute"
+                    },
+                    "unique_ips": {
+                        "value": 12,
+                        "description": "Number of unique IP addresses in recent activity"
+                    },
+                    "blocked_count": {
+                        "value": 3,
+                        "description": "Number of currently blocked request fingerprints"
                     }
+                },
+                "analytics_summary": {
+                    "daily_total": 2847,
+                    "threat_level": "LOW",
+                    "storage_backend": "memory"
                 }
             }
-        }
+        )
         
     @staticmethod
     def get_500_response() -> Dict[str, Any]:
         """Get 500 response description."""
-        return {
-            "description": "Security statistics unavailable",
-            "content": {
-                "application/json": {
-                    "example": {
-                        "error": "Rate limiter not initialized",
-                        "timestamp": "2025-09-05T10:30:00.000Z"
-                    }
+        return build_response(
+            description= "Security statistics retrieval error",
+            model= SecurityStatsErrorResponse,
+            example= {
+                "error": "Failed to retrieve security statistics",
+                "error_code": ErrorCode.SECURITY_STATS_RETRIEVAL_ERROR,
+                "timestamp": "2025-09-10T10:30:00.000Z",
+                "details": {
+                    "component": "security_analytics",
+                    "operation": "get_security_status"
                 }
             }
-        }
+        )
 
     @classmethod
     def get_full_description(cls) -> str:

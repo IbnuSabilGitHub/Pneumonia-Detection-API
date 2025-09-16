@@ -1,4 +1,7 @@
 from typing import Dict, Any
+from ..base_builder import build_response
+from ...models.error_codes import ErrorCode
+from ...models.security_schemes import SecurityStatusResponse, SecurityErrorResponse
 
 class StatusMetadata:
     """Metadata for documentations status endpoint."""
@@ -72,49 +75,43 @@ from various attacks and abuse patterns.</p>
     @staticmethod
     def get_200_response() -> Dict[str, Any]:
         """Get 200 response description."""
-        return {
-            "description": "Security status retrieved successfully",
-            "content": {
-                "application/json": {
-                    "example": {
-                        "service": "Pneumonia Detection API",
-                        "security_status": "active",
-                        "timestamp": "2025-09-05T10:30:00.000Z",
-                        "advanced_protection": {
-                            "global_attack_score": 0.15,
-                            "requests_per_minute": 23,
-                            "recent_unique_ips": 8,
-                            "blocked_fingerprints": 2,
-                            "storage_type": "memory"
-                        },
-                        "protection_features": [
-                            "Multi-layer Rate Limiting (In-Memory)",
-                            "IP Switching Attack Detection (In-Memory)",
-                            "Request Fingerprinting (In-Memory)",
-                            "Behavioral Analysis (In-Memory)",
-                            "Global Attack Scoring (In-Memory)",
-                            "Duplicate File Detection (In-Memory)"
-                        ]
-                    }
-                }
+        return build_response(
+            description= "Security status retrieved successfully",
+            model= SecurityStatusResponse,
+            example= {
+                "service": "Pneumonia Detection API",
+                "security_status": "active",
+                "timestamp": "2025-09-05T10:30:00.000Z",
+                "advanced_protection": {
+                    "global_attack_score": 0.15,
+                    "requests_per_minute": 23,
+                    "recent_unique_ips": 8,
+                    "blocked_fingerprints": 2,
+                    "storage_type": "memory"
+                },
+                "protection_features": [
+                    "Multi-layer Rate Limiting (In-Memory)",
+                    "IP Switching Attack Detection (In-Memory)",
+                    "Request Fingerprinting (In-Memory)",
+                    "Behavioral Analysis (In-Memory)",
+                    "Global Attack Scoring (In-Memory)",
+                    "Duplicate File Detection (In-Memory)"
+                ]
             }
-        }
+        )
         
     def get_500_response() -> Dict[str, Any]:
         """Get 500 response description."""
-        return {
-            "description": "Security system error",
-            "content": {
-                "application/json": {
-                    "example": {
-                        "service": "Pneumonia Detection API",
-                        "security_status": "not_initialized",
-                        "timestamp": "2025-09-05T10:30:00.000Z",
-                        "error": "Rate limiter not initialized"
-                    }
-                }
+        return build_response(
+            description= "Security system error",
+            model= SecurityErrorResponse,
+            example= {
+                "service": "Pneumonia Detection API",
+                "security_status": "not_initialized",
+                "timestamp": "2025-09-05T10:30:00.000Z",
+                "error": ErrorCode.RATE_LIMIT_NOT_INITIALIZED
             }
-        }
+        )
 
     @classmethod
     def get_full_description(cls) -> str:
