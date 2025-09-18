@@ -1,5 +1,6 @@
 from pydantic import BaseModel, Field
 from typing import  Optional
+from .base import BaseErrorResponse
 
 class HealthResponse(BaseModel):
     """
@@ -50,5 +51,18 @@ class HealthResponse(BaseModel):
                 "model_loaded": True,
                 "version": "1.0.0",
                 "uptime": 3600.5
+            }
+        }
+
+
+class HealthErrorResponse(BaseErrorResponse):
+    """Error response for health check failures."""
+    
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "detail": "Health check service unavailable",
+                "error_code": "HEALTH_CHECK_FAILED",
+                "timestamp": "2025-09-13T10:30:00.000Z"
             }
         }

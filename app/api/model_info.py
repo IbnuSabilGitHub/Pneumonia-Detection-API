@@ -6,6 +6,7 @@ from ..services.prediction import PneumoniaPredictionService
 from ..core.logger import get_logger
 from ..utils.get_prediction_service import get_prediction_service
 from ..docs.sections.model_info_metadata import ModelInfoMetadata
+from ..models.model_info_schemas import ModelInfoResponse, ModelInfoErrorResponse
 
 
 logger = get_logger(__name__)
@@ -17,6 +18,7 @@ model_info_metadata = ModelInfoMetadata.get_metadata()
 
 @router.get(
     "/model/info",
+    response_model=ModelInfoResponse,
     tags=["Model"],
     **model_info_metadata,
 )
@@ -51,7 +53,11 @@ async def get_model_info(
     if not prediction_service:
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail="Prediction service not available"
+            detail=ModelInfoErrorResponse(
+                detail="Prediction service not available",
+                error_code="SERVICE_UNAVAILABLE",
+                service_status="not_initialized"
+            ).model_dump()
         )
     
     return prediction_service.get_model_info()

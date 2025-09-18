@@ -10,8 +10,6 @@ def custom_openapi(app):
         description="AI Pneumonia Detection Service",
         routes=app.routes,
     )
-    # Inject branding / contact / license
-    schema["info"]["contact"] = {"name": "IbnuShabillGitHub", "email": "ibnusabil2301@gmail.com"}
     schema["info"]["license"] = {"name": "MIT"}
     app.openapi_schema = schema
     return app.openapi_schema

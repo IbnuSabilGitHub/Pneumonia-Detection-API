@@ -1,7 +1,7 @@
 from typing import List, Optional
 from pydantic import BaseModel, Field
 from .base import BaseErrorResponse, AdvancedProtection
-from typing import Dict, Any, Optional as _Optional
+from typing import Dict, Any, Optional
 
 class SecurityStatusResponse(BaseModel):
     """

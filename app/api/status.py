@@ -4,7 +4,7 @@ Security Status Endpoint
 from datetime import datetime
 from fastapi import APIRouter, HTTPException, status
 from ..docs.sections.status_metadata import StatusMetadata
-from ..models.security_schemes import SecurityStatusResponse
+from ..models.security_schemes import SecurityStatusResponse, SecurityErrorResponse
 
 from ..core.logger import get_logger
 
@@ -62,12 +62,11 @@ async def get_security_status() -> SecurityStatusResponse:
     if advanced_rate_limiter is None:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail={
-                "service": "Pneumonia Detection API",
-                "security_status": "not_initialized",
-                "timestamp": datetime.now().isoformat(),
-                "error": "Rate limiter not initialized"
-            }
+            detail=SecurityErrorResponse(
+                detail="Rate limiter not initialized",
+                error_code="RATE_LIMITER_NOT_INITIALIZED",
+                service_status="not_initialized"
+            ).model_dump()
         )
     
     # Use async method if available, otherwise fallback
@@ -80,12 +79,11 @@ async def get_security_status() -> SecurityStatusResponse:
         logger.error(f"Failed to get security status: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail={
-                "service": "Pneumonia Detection API",
-                "security_status": "not_initialized",
-                "timestamp": datetime.now().isoformat(),
-                "error": str(e)
-            }
+            detail=SecurityErrorResponse(
+                detail=f"Failed to get security status: {str(e)}",
+                error_code="SECURITY_STATUS_ERROR",
+                service_status="error"
+            ).model_dump()
         )
     
     return SecurityStatusResponse(

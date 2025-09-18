@@ -397,3 +397,7 @@ class PredictionInternalServerErrorResponse(BaseErrorResponse):
                 "timestamp": "2025-09-13T10:30:00.000Z"
             }
         }
+
+
+# Generic Error Response for Prediction
+PredictionErrorResponse = PredictionInternalServerErrorResponse

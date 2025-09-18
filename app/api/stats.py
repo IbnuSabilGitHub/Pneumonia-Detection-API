@@ -5,7 +5,7 @@ Security Statistics Endpoint
 from datetime import datetime
 from fastapi import APIRouter, HTTPException, status
 from ..docs.sections.stat_metadata import StatMetadata
-from ..models.security_schemes import SecurityStatsResponse
+from ..models.security_schemes import SecurityStatsResponse, SecurityStatsErrorResponse
 
 from ..core.logger import get_logger
 
@@ -74,15 +74,12 @@ async def get_security_stats() -> SecurityStatsResponse:
     if advanced_rate_limiter is None:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail={
-                "error": "Rate limiter not initialized",
-                "error_code": "RATE_LIMITER_NOT_INITIALIZED",
-                "timestamp": datetime.now().isoformat(),
-                "details": {
-                    "component": "rate_limiter",
-                    "initialization_status": "failed"
-                }
-            }
+            detail=SecurityStatsErrorResponse(
+                detail="Rate limiter not initialized",
+                error_code="RATE_LIMITER_NOT_INITIALIZED",
+                component="rate_limiter",
+                initialization_status="failed"
+            ).model_dump()
         )
     
     try:
@@ -96,15 +93,12 @@ async def get_security_stats() -> SecurityStatsResponse:
         logger.error(f"Failed to get security stats: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail={
-                "error": str(e),
-                "error_code": "SECURITY_STATS_RETRIEVAL_ERROR",
-                "timestamp": datetime.now().isoformat(),
-                "details": {
-                    "component": "security_analytics",
-                    "operation": "get_security_status"
-                }
-            }
+            detail=SecurityStatsErrorResponse(
+                detail=f"Failed to get security stats: {str(e)}",
+                error_code="SECURITY_STATS_RETRIEVAL_ERROR",
+                component="security_analytics",
+                operation="get_security_status"
+            ).model_dump()
         )
     
     # Generate threat level interpretation

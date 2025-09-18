@@ -2,7 +2,7 @@
 Health check and monitoring endpoints.
 """
 import time
-from fastapi import APIRouter,  Depends
+from fastapi import APIRouter,  Depends, HTTPException, status
 from slowapi import Limiter
 from slowapi.util import get_remote_address
 
@@ -10,7 +10,7 @@ from ..services.prediction import PneumoniaPredictionService
 from ..core.settings import settings
 from ..core.logger import get_logger
 from ..docs.sections.health_metadata import HealthMetadata
-from ..models.health_schemas import HealthResponse
+from ..models.health_schemas import HealthResponse, HealthErrorResponse
 
 
 logger = get_logger(__name__)
@@ -37,6 +37,12 @@ def get_prediction_service() -> PneumoniaPredictionService:
     summary="Service Health Check (Alternative)",
     description="Alternative endpoint for health checking - same functionality as root endpoint"
 )
+async def health_check_alt(
+    prediction_service: PneumoniaPredictionService = Depends(get_prediction_service)
+):
+    """Alternative health check endpoint."""
+    return await health_check(prediction_service)
+
 
 @router.get(
     "/",
@@ -71,21 +77,31 @@ async def health_check(
         - `partial`: Service running with limitations
         - `unhealthy`: Critical issues detected
     """
-    uptime = time.time() - _start_time
-    
-    # Determine health status
-    model_loaded = prediction_service.is_loaded() if prediction_service else False
-    
-    if prediction_service and model_loaded:
-        status = "healthy"
-    elif prediction_service and not model_loaded:
-        status = "partial"  # Service exists but model not loaded
-    else:
-        status = "partial"  # Service not available but app is running
-    
-    return HealthResponse(
-        status=status,
-        model_loaded=model_loaded,
-        version=settings.app_version,
-        uptime=uptime
-    )
+    try:
+        uptime = time.time() - _start_time
+        
+        # Determine health status
+        model_loaded = prediction_service.is_loaded() if prediction_service else False
+        
+        if prediction_service and model_loaded:
+            status_val = "healthy"
+        elif prediction_service and not model_loaded:
+            status_val = "partial"  # Service exists but model not loaded
+        else:
+            status_val = "partial"  # Service not available but app is running
+        
+        return HealthResponse(
+            status=status_val,
+            model_loaded=model_loaded,
+            version=settings.app_version,
+            uptime=uptime
+        )
+    except Exception as e:
+        logger.error(f"Health check failed: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=HealthErrorResponse(
+                detail=f"Health check failed: {str(e)}",
+                error_code="HEALTH_CHECK_FAILED"
+            ).model_dump()
+        )

@@ -4,7 +4,7 @@ import asyncio
 from fastapi import FastAPI, status
 from fastapi.responses import JSONResponse
 from .core.middleware_factory import MiddlewareFactory
-from .docs.sections.api_metadata import APIMetadata
+from .docs.sections.api_metadata import ApiMetadata
 from .core.settings import settings
 from .core.logger import setup_logging, get_logger
 from .api import health, prediction, status, stats, model_info
@@ -17,8 +17,6 @@ from .openapi import custom_openapi
 setup_logging()
 logger = get_logger(__name__)
 
-# Remove global variable
-# prediction_service: PneumoniaPredictionService = None
 
 
 @asynccontextmanager
@@ -117,7 +115,7 @@ def create_app() -> FastAPI:
         Configured FastAPI application instance
     """
     # Get app metadata from template
-    app_metadata = APIMetadata.get_app_metadata()
+    app_metadata = ApiMetadata.get_app_metadata()
     
     # create FastAPi metadata from template
     app = FastAPI(lifespan=lifespan, **app_metadata)

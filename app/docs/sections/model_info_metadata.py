@@ -7,6 +7,7 @@ from ...models.model_info_schemas import (
     ModelInfoNotFoundResponse,
     ModelInfoServiceUnavailableResponse
 )
+from ...models.model_info_schemas import ModelInfoResponse
 
 
 class ModelInfoMetadata:
