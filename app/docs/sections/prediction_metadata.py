@@ -1,24 +1,26 @@
-from typing import Dict, Any
-from ...models.error_codes import ErrorCode
+from typing import Any, Dict
+
 from ...docs.base_builder import build_response
+from ...models.error_codes import ErrorCode
 from ...models.prediction_schemas import (
-    PredictionResponse,
-    PredictionValidationErrorResponse,
-    PredictionBadRequestResponse, 
+    PredictionBadRequestResponse,
     PredictionConflictResponse,
+    PredictionInternalServerErrorResponse,
     PredictionPayloadTooLargeResponse,
     PredictionRateLimitResponse,
+    PredictionResponse,
     PredictionServiceUnavailableResponse,
-    PredictionInternalServerErrorResponse
+    PredictionValidationErrorResponse,
 )
+
 
 class PredictionMetadata:
     """Metadata for documentations prediction penumonia endpoint."""
-    
+
     @staticmethod
     def get_title() -> str:
         return "<h2>🤖 Pneumonia Detection from Chest X-ray</h2>"
-    
+
     @staticmethod
     def get_description() -> str:
         """Get prediction endpoint description."""
@@ -114,6 +116,7 @@ Always consult qualified healthcare professionals for medical decisions.</p>
 <li>Always validate results with medical professionals</li>
 </ul>
 """
+
     @staticmethod
     def example_usage() -> str:
         return """
@@ -128,26 +131,22 @@ Always consult qualified healthcare professionals for medical decisions.</p>
     @staticmethod
     def get_response_description() -> str:
         return "Detailed pneumonia detection results with confidence scores"
-    
+
     @staticmethod
     def get_200_response() -> Dict[str, Any]:
         return build_response(
-        description= "Prediction successful",
-        model= PredictionResponse,
-        example= {
-            "prediction": "NORMAL",
-            "confidence": 0.92,
-            "probabilities": {
-                "NORMAL": 0.92,
-                "PNEUMONIA": 0.08
+            description="Prediction successful",
+            model=PredictionResponse,
+            example={
+                "prediction": "NORMAL",
+                "confidence": 0.92,
+                "probabilities": {"NORMAL": 0.92, "PNEUMONIA": 0.08},
+                "medical_recommendation": "Normal results - maintain regular health checkups",
+                "model_version": "v1.0",
+                "model_type": "standard",
+                "disclaimer": "This model is for educational purposes only. Consult a healthcare professional for medical advice.",
             },
-            "medical_recommendation": "Normal results - maintain regular health checkups",
-            "model_version": "v1.0",
-            "model_type": "standard",
-            "disclaimer": "This model is for educational purposes only. Consult a healthcare professional for medical advice."
-        }
-    )
-
+        )
 
     @staticmethod
     def get_400_response() -> Dict[str, Any]:
@@ -189,7 +188,7 @@ Always consult qualified healthcare professionals for medical decisions.</p>
                 },
             },
         )
-    
+
     @staticmethod
     def get_409_response() -> Dict[str, Any]:
         return build_response(
@@ -204,9 +203,9 @@ Always consult qualified healthcare professionals for medical decisions.</p>
                     "file_hash": "a1b2c3d4",
                     "timestamp": "2025-09-13T10:30:00.000Z",
                 },
-            }
+            },
         )
-    
+
     @staticmethod
     def get_413_response() -> Dict[str, Any]:
         return build_response(
@@ -221,9 +220,9 @@ Always consult qualified healthcare professionals for medical decisions.</p>
                     "actual_size_mb": 15.2,
                     "timestamp": "2025-09-13T10:30:00.000Z",
                 },
-            }
+            },
         )
-        
+
     @staticmethod
     def get_422_response() -> Dict[str, Any]:
         return build_response(
@@ -234,7 +233,11 @@ Always consult qualified healthcare professionals for medical decisions.</p>
                     "summary": "No file provided",
                     "value": {
                         "detail": [
-                            {"loc": ["body", "file"], "msg": "Field required", "type": "missing"}
+                            {
+                                "loc": ["body", "file"],
+                                "msg": "Field required",
+                                "type": "missing",
+                            }
                         ]
                     },
                 },
@@ -242,13 +245,17 @@ Always consult qualified healthcare professionals for medical decisions.</p>
                     "summary": "Invalid Content-Type header",
                     "value": {
                         "detail": [
-                            {"loc": ["body", "file"], "msg": "Expected multipart/form-data", "type": "value_error"}
+                            {
+                                "loc": ["body", "file"],
+                                "msg": "Expected multipart/form-data",
+                                "type": "value_error",
+                            }
                         ]
                     },
                 },
-            }
+            },
         )
-        
+
     @staticmethod
     def get_429_response() -> Dict[str, Any]:
         return build_response(
@@ -266,21 +273,21 @@ Always consult qualified healthcare professionals for medical decisions.</p>
                 },
             },
         )
-        
+
     @staticmethod
     def get_503_response() -> Dict[str, Any]:
         return build_response(
             description="Service unavailable (model not loaded)",
-            model= PredictionServiceUnavailableResponse,
-            examples= {
+            model=PredictionServiceUnavailableResponse,
+            examples={
                 "service_unavailable": {
                     "summary": "Prediction service not available",
                     "value": {
                         "detail": "Prediction service is not available",
                         "error_code": ErrorCode.SERVICE_UNAVAILABLE,
                         "service_status": "not_initialized",
-                        "timestamp": "2025-09-13T10:30:00.000Z"
-                    }
+                        "timestamp": "2025-09-13T10:30:00.000Z",
+                    },
                 },
                 "model_not_loaded": {
                     "summary": "AI model not loaded",
@@ -288,26 +295,26 @@ Always consult qualified healthcare professionals for medical decisions.</p>
                         "detail": "AI model is not loaded or failed to initialize",
                         "error_code": ErrorCode.MODEL_NOT_LOADED,
                         "service_status": "model_error",
-                        "timestamp": "2025-09-13T10:30:00.000Z"
-                    }
-                }
-            }
+                        "timestamp": "2025-09-13T10:30:00.000Z",
+                    },
+                },
+            },
         )
-        
+
     @staticmethod
     def get_500_response() -> Dict[str, Any]:
         return build_response(
-            description= "Internal server error",
-            model= PredictionInternalServerErrorResponse,
-            examples= {
+            description="Internal server error",
+            model=PredictionInternalServerErrorResponse,
+            examples={
                 "generic_error": {
                     "summary": "Generic server error",
                     "value": {
                         "detail": "Internal server error",
                         "error_code": ErrorCode.INTERNAL_SERVER_ERROR,
                         "error_id": "err_abc123def456",
-                        "timestamp": "2025-09-13T10:30:00.000Z"
-                    }
+                        "timestamp": "2025-09-13T10:30:00.000Z",
+                    },
                 },
                 "prediction_failed": {
                     "summary": "Prediction processing failed",
@@ -315,12 +322,12 @@ Always consult qualified healthcare professionals for medical decisions.</p>
                         "detail": "Failed to process image",
                         "error_code": ErrorCode.PREDICTION_FAILED,
                         "error_id": "err_pred789xyz",
-                        "timestamp": "2025-09-13T10:30:00.000Z"
-                    }
-                }
-            }
+                        "timestamp": "2025-09-13T10:30:00.000Z",
+                    },
+                },
+            },
         )
-        
+
     @classmethod
     def get_full_description(cls) -> str:
         """Get complete API description by combining all sections"""
@@ -333,10 +340,10 @@ Always consult qualified healthcare professionals for medical decisions.</p>
             cls.get_security_validation(),
             cls.get_important_medical_disclaimer(),
             cls.get_best_practices(),
-            cls.example_usage()
+            cls.example_usage(),
         ]
         return "".join(sections)
-    
+
     @classmethod
     def get_responses(cls) -> Dict[int, Dict[str, Any]]:
         """get all response descriptions"""
@@ -350,7 +357,7 @@ Always consult qualified healthcare professionals for medical decisions.</p>
             503: cls.get_503_response(),
             500: cls.get_500_response(),
         }
-        
+
     @classmethod
     def get_metadata(cls) -> Dict[str, Any]:
         """Get complete metadata for FastAPI endpoint configuration."""
@@ -358,8 +365,5 @@ Always consult qualified healthcare professionals for medical decisions.</p>
             "summary": "AI-Powered Pneumonia Detection",
             "description": cls.get_full_description(),
             "response_description": cls.get_response_description(),
-            "responses": cls.get_responses()
+            "responses": cls.get_responses(),
         }
-        
-    
-    

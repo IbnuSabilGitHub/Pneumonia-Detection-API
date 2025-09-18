@@ -1,22 +1,22 @@
-from typing import Dict, Any
+from typing import Any, Dict
+
 from ...docs.base_builder import build_response
 from ...models.error_codes import ErrorCode
 from ...models.model_info_schemas import (
-    ModelInfoResponse,
-    ModelInfoValidationErrorResponse,
     ModelInfoNotFoundResponse,
-    ModelInfoServiceUnavailableResponse
+    ModelInfoResponse,
+    ModelInfoServiceUnavailableResponse,
+    ModelInfoValidationErrorResponse,
 )
-from ...models.model_info_schemas import ModelInfoResponse
 
 
 class ModelInfoMetadata:
     """Metadata for Model Information Endpoint."""
-    
+
     @staticmethod
     def get_title() -> str:
         return "<h2>🤖 Machine Learning Model Details</h2>"
-    
+
     @staticmethod
     def get_model_description() -> str:
         return """
@@ -80,9 +80,9 @@ architecture details, performance metrics, and training statistics.</p>
     @staticmethod
     def get_200_response() -> Dict[str, Any]:
         return build_response(
-            description= "Model information retrieved successfully",
-            model= ModelInfoResponse,
-            examples= {
+            description="Model information retrieved successfully",
+            model=ModelInfoResponse,
+            examples={
                 "model_loaded": {
                     "summary": "Model successfully loaded",
                     "value": {
@@ -94,60 +94,58 @@ architecture details, performance metrics, and training statistics.</p>
                         "std": 0.237,
                         "target_size": [192, 192],
                         "labels": ["NORMAL", "PNEUMONIA"],
-                        "model_type": "efficientnet_b0"
-                    }
+                        "model_type": "efficientnet_b0",
+                    },
                 },
                 "model_not_loaded": {
                     "summary": "Model not loaded",
-                    "value": {
-                        "loaded": False
-                    }
-                }
-            }
+                    "value": {"loaded": False},
+                },
+            },
         )
-        
+
     @staticmethod
     def get_404_response() -> Dict[str, Any]:
         return build_response(
-            description= "Model not found",
-            model= ModelInfoNotFoundResponse,
-            example= {
+            description="Model not found",
+            model=ModelInfoNotFoundResponse,
+            example={
                 "detail": "Model 'invalid_model' not found",
                 "error_code": ErrorCode.MODEL_NOT_FOUND,
                 "available_models": ["standard", "efficientnet_b0"],
-                "timestamp": "2025-09-13T10:30:00.000Z"
-            }
+                "timestamp": "2025-09-13T10:30:00.000Z",
+            },
         )
-        
+
     @staticmethod
     def get_503_response() -> Dict[str, Any]:
         return build_response(
-            description= "Prediction service unavailable",
-            model= ModelInfoServiceUnavailableResponse,
-            example= {
+            description="Prediction service unavailable",
+            model=ModelInfoServiceUnavailableResponse,
+            example={
                 "detail": "Prediction service not available",
                 "error_code": ErrorCode.SERVICE_UNAVAILABLE,
                 "service_status": "not_initialized",
-                "timestamp": "2025-09-13T10:30:00.000Z"
-            }
+                "timestamp": "2025-09-13T10:30:00.000Z",
+            },
         )
-        
+
     @staticmethod
     def get_422_response() -> Dict[str, Any]:
         return build_response(
-            description= "Validation Error",
-            model= ModelInfoValidationErrorResponse,
-            example= {
+            description="Validation Error",
+            model=ModelInfoValidationErrorResponse,
+            example={
                 "detail": [
                     {
                         "loc": ["query", "model"],
                         "msg": "Invalid model type specified",
-                        "type": "value_error"
+                        "type": "value_error",
                     }
                 ]
-            }
+            },
         )
-        
+
     @classmethod
     def get_full_description(cls) -> str:
         """Get complete API description by combining all sections."""
@@ -157,19 +155,19 @@ architecture details, performance metrics, and training statistics.</p>
             cls.get_information_included(),
             cls.get_use_case(),
             cls.get_model_comparison(),
-            cls.get_performance()
+            cls.get_performance(),
         ]
         return "\n".join(sections)
-    
+
     @classmethod
     def get_responses(cls) -> Dict[int, Dict[str, Any]]:
         return {
             200: cls.get_200_response(),
             404: cls.get_404_response(),
             422: cls.get_422_response(),
-            503: cls.get_503_response()
+            503: cls.get_503_response(),
         }
-        
+
     @classmethod
     def get_metadata(cls) -> Dict[str, Any]:
         """Get complete metadata for FastAPI endpoint configuration."""
@@ -177,5 +175,5 @@ architecture details, performance metrics, and training statistics.</p>
             "summary": "Comprehensive Model Information",
             "description": cls.get_full_description(),
             "response_description": cls.get_response_description(),
-            "responses": cls.get_responses()
+            "responses": cls.get_responses(),
         }

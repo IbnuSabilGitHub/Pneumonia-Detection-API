@@ -1,11 +1,13 @@
-from typing import Dict, Any
-from ..base_builder import build_response
+from typing import Any, Dict
+
 from ...models.error_codes import ErrorCode
-from ...models.security_schemes import SecurityStatusResponse, SecurityErrorResponse
+from ...models.security_schemes import SecurityErrorResponse, SecurityStatusResponse
+from ..base_builder import build_response
+
 
 class StatusMetadata:
     """Metadata for documentations status endpoint."""
-    
+
     @staticmethod
     def get_description() -> str:
         """Get security status description."""
@@ -30,7 +32,7 @@ from various attacks and abuse patterns.</p>
 <li><strong>Global Attack Scoring</strong>: Overall threat level assessment</li>
 </ul>
 """
-    
+
     @staticmethod
     def get_status_information() -> str:
         """Get status information section."""
@@ -45,7 +47,7 @@ from various attacks and abuse patterns.</p>
 <li><strong>Performance Metrics</strong>: Security system performance data</li>
 </ul>
 """
-    
+
     @staticmethod
     def get_use_cases() -> str:
         """Get use cases section."""
@@ -72,13 +74,14 @@ from various attacks and abuse patterns.</p>
 <li><strong>Real-time Data</strong>: Live security metrics</li>
 </ul>
 """
+
     @staticmethod
     def get_200_response() -> Dict[str, Any]:
         """Get 200 response description."""
         return build_response(
-            description= "Security status retrieved successfully",
-            model= SecurityStatusResponse,
-            example= {
+            description="Security status retrieved successfully",
+            model=SecurityStatusResponse,
+            example={
                 "service": "Pneumonia Detection API",
                 "security_status": "active",
                 "timestamp": "2025-09-05T10:30:00.000Z",
@@ -87,7 +90,7 @@ from various attacks and abuse patterns.</p>
                     "requests_per_minute": 23,
                     "recent_unique_ips": 8,
                     "blocked_fingerprints": 2,
-                    "storage_type": "memory"
+                    "storage_type": "memory",
                 },
                 "protection_features": [
                     "Multi-layer Rate Limiting (In-Memory)",
@@ -95,46 +98,43 @@ from various attacks and abuse patterns.</p>
                     "Request Fingerprinting (In-Memory)",
                     "Behavioral Analysis (In-Memory)",
                     "Global Attack Scoring (In-Memory)",
-                    "Duplicate File Detection (In-Memory)"
-                ]
-            }
+                    "Duplicate File Detection (In-Memory)",
+                ],
+            },
         )
-        
+
     def get_500_response() -> Dict[str, Any]:
         """Get 500 response description."""
         return build_response(
-            description= "Security system error",
-            model= SecurityErrorResponse,
-            example= {
+            description="Security system error",
+            model=SecurityErrorResponse,
+            example={
                 "service": "Pneumonia Detection API",
                 "security_status": "not_initialized",
                 "timestamp": "2025-09-05T10:30:00.000Z",
-                "error": ErrorCode.RATE_LIMIT_NOT_INITIALIZED
-            }
+                "error": ErrorCode.RATE_LIMIT_NOT_INITIALIZED,
+            },
         )
 
     @classmethod
     def get_full_description(cls) -> str:
         """Get complete API description by combining all sections."""
         sections = [
-        "<h2>🔒 Advanced Security Protection Status</h2>",
-        cls.get_description(),
-        cls.get_protection_features_monitored(),
-        cls.get_status_information(),
-        cls.get_use_cases(),
-        cls.get_performance()
+            "<h2>🔒 Advanced Security Protection Status</h2>",
+            cls.get_description(),
+            cls.get_protection_features_monitored(),
+            cls.get_status_information(),
+            cls.get_use_cases(),
+            cls.get_performance(),
         ]
-    
+
         return "".join(sections)
-    
+
     @classmethod
     def get_responses(cls) -> Dict[int, Dict[str, Any]]:
         """Get complete responses dictionary."""
-        return {
-            200: cls.get_200_response(),
-            500: cls.get_500_response()
-        }
-        
+        return {200: cls.get_200_response(), 500: cls.get_500_response()}
+
     @classmethod
     def get_metadata(cls) -> Dict[str, Any]:
         """Get complete metadata for FastAPI endpoint configuration."""
@@ -145,5 +145,5 @@ from various attacks and abuse patterns.</p>
             "responses": cls.get_responses(),
             "operation_id": "get_security_status",
             "response_model_exclude_unset": True,
-            "response_model_exclude_none": True
+            "response_model_exclude_none": True,
         }

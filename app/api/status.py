@@ -1,12 +1,14 @@
 """
 Security Status Endpoint
 """
+
 from datetime import datetime
+
 from fastapi import APIRouter, HTTPException, status
-from ..docs.sections.status_metadata import StatusMetadata
-from ..models.security_schemes import SecurityStatusResponse, SecurityErrorResponse
 
 from ..core.logger import get_logger
+from ..docs.sections.status_metadata import StatusMetadata
+from ..models.security_schemes import SecurityErrorResponse, SecurityStatusResponse
 
 logger = get_logger(__name__)
 router = APIRouter()
@@ -15,15 +17,15 @@ status_metadata = StatusMetadata.get_metadata()
 
 
 @router.get(
-    "/status", 
-    tags=["Security"], 
+    "/status",
+    tags=["Security"],
     response_model=SecurityStatusResponse,
-    **status_metadata
+    **status_metadata,
 )
 async def get_security_status() -> SecurityStatusResponse:
     """
     **Advanced Security System Status**
-    
+
     Provides comprehensive real-time status of the multi-layer security protection
     system including threat detection, rate limiting, and attack prevention measures.
     F
@@ -35,12 +37,12 @@ async def get_security_status() -> SecurityStatusResponse:
     - **IP Switching Detection**: Rapid IP change pattern detection
     - **File Duplication Prevention**: Duplicate upload detection
     - **Global Threat Scoring**: Overall attack probability assessment
-    
+
     **Status Categories:**
     - **active**: Security system fully operational
     - **not_initialized**: Security components not ready
     - **degraded**: Partial security functionality
-    
+
     **Returns:**
         dict: Complete security status with:
         - Overall system health and operational status
@@ -48,7 +50,7 @@ async def get_security_status() -> SecurityStatusResponse:
         - Current threat levels and attack scores
         - Storage backend status and performance
         - Timestamp for status validity
-        
+
     **Use Cases:**
         - Real-time security monitoring
         - Threat level assessment
@@ -57,22 +59,28 @@ async def get_security_status() -> SecurityStatusResponse:
     """
     # Import at runtime to get the latest reference
     from ..core.advanced_rate_limiting import get_rate_limiter
+
     advanced_rate_limiter = get_rate_limiter()
-    
+
     if advanced_rate_limiter is None:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=SecurityErrorResponse(
                 detail="Rate limiter not initialized",
                 error_code="RATE_LIMITER_NOT_INITIALIZED",
-                service_status="not_initialized"
-            ).model_dump()
+                service_status="not_initialized",
+            ).model_dump(),
         )
-    
+
     # Use async method if available, otherwise fallback
     try:
-        if hasattr(advanced_rate_limiter, '_storage_initialized') and advanced_rate_limiter._storage_initialized:
-            advanced_protection = await advanced_rate_limiter.get_security_status_async()
+        if (
+            hasattr(advanced_rate_limiter, "_storage_initialized")
+            and advanced_rate_limiter._storage_initialized
+        ):
+            advanced_protection = (
+                await advanced_rate_limiter.get_security_status_async()
+            )
         else:
             advanced_protection = advanced_rate_limiter.get_security_status()
     except Exception as e:
@@ -82,10 +90,10 @@ async def get_security_status() -> SecurityStatusResponse:
             detail=SecurityErrorResponse(
                 detail=f"Failed to get security status: {str(e)}",
                 error_code="SECURITY_STATUS_ERROR",
-                service_status="error"
-            ).model_dump()
+                service_status="error",
+            ).model_dump(),
         )
-    
+
     return SecurityStatusResponse(
         service="Pneumonia Detection API",
         security_status="active",
@@ -93,12 +101,12 @@ async def get_security_status() -> SecurityStatusResponse:
         advanced_protection=advanced_protection,
         protection_features=[
             "Multi-layer Rate Limiting (In-Memory)",
-            "IP Switching Attack Detection (In-Memory)", 
+            "IP Switching Attack Detection (In-Memory)",
             "Request Fingerprinting (In-Memory)",
             "Behavioral Analysis (In-Memory)",
             "Global Attack Scoring (In-Memory)",
             "Duplicate File Detection (In-Memory)",
             "Persistent Storage (In-Memory)",
-            "Single-instance Optimized (In-Memory)"
-        ]
+            "Single-instance Optimized (In-Memory)",
+        ],
     )

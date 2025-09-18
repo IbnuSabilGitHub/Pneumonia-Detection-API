@@ -1,18 +1,19 @@
-from typing import Dict, Any
+from typing import Any, Dict
 
 
 class HealthMetadata:
     """Metadata for Health Check Endpoint."""
-    
+
     @staticmethod
     def get_title() -> str:
         return "<h2>🏥 Medical AI API for Chest X-ray Pneumonia Detection</h2>"
-    
+
     @staticmethod
     def get_medical_disclaimer() -> str:
         return """
     <p>Provides comprehensive health status information about the Pneumonia Detection API service.</p>
 """
+
     @staticmethod
     def get_health_status_levels() -> str:
         return """
@@ -24,7 +25,7 @@ class HealthMetadata:
 <li>unhealthy: Critical issues detected</li>
 </ul>
 """
-    
+
     @staticmethod
     def get_response_information() -> str:
         return """
@@ -77,9 +78,9 @@ class HealthMetadata:
             cls.get_use_cases(),
             cls.get_performance(),
         ]
-        
+
         return "".join(sections)
-    
+
     @classmethod
     def get_metadata(cls) -> Dict[str, Any]:
         """Get complete metadata for FastAPI endpoint configuration."""
@@ -88,7 +89,3 @@ class HealthMetadata:
             "description": cls.get_full_description(),
             "response_description": cls.get_response_description(),
         }
-    
-    
-
-

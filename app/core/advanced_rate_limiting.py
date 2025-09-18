@@ -4,12 +4,14 @@ This module now re-exports the refactored implementation from
 `app.core.rate_limiting` while keeping the previous import path
 stable. Please migrate imports to `app.core.rate_limiting`.
 """
-from typing import Optional, Dict, Any
+
 import logging
+from typing import Any, Dict, Optional
+
+from .rate_limiting.api import create_advanced_rate_limiter  # noqa: F401
 
 # Re-export public API from the new package
 from .rate_limiting.core import AdvancedRateLimiter  # noqa: F401
-from .rate_limiting.api import create_advanced_rate_limiter  # noqa: F401
 from .storage_factory import StorageType  # re-export for callers using old path
 
 logger = logging.getLogger(__name__)
@@ -33,5 +35,7 @@ def set_rate_limiter(limiter: AdvancedRateLimiter) -> None:
     """
     global advanced_rate_limiter
     if limiter is not None:
-        logger.debug("advanced_rate_limiting: using compatibility wrapper; consider migrating imports to app.core.rate_limiting.*")
+        logger.debug(
+            "advanced_rate_limiting: using compatibility wrapper; consider migrating imports to app.core.rate_limiting.*"
+        )
     advanced_rate_limiter = limiter

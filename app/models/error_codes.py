@@ -1,5 +1,6 @@
 from enum import Enum
 
+
 class ErrorCode(str, Enum):
     INVALID_FILE_FORMAT = "INVALID_FILE_FORMAT"
     INVALID_IMAGE_CONTENT = "INVALID_IMAGE_CONTENT"

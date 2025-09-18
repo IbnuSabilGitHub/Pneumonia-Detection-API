@@ -1,34 +1,35 @@
 """
 Pneumonia prediction API endpoints.
 """
+
 import io
 import time
-from fastapi import APIRouter, File, UploadFile, HTTPException, status, Request, Depends
+
+from fastapi import APIRouter, Depends, File, HTTPException, Request, UploadFile, status
 from fastapi.responses import JSONResponse
 from slowapi import Limiter
 from slowapi.util import get_remote_address
 
-
-from ..services.prediction import PneumoniaPredictionService
-from ..utils.security import get_client_ip, calculate_file_hash, file_hash_cache
-from ..utils.validation import (
-    validate_file_extension, 
-    validate_file_size, 
-    validate_image_integrity,
-    validate_image_content,
-    get_image_stats
-)
-from ..utils.exceptions import (
-    FileValidationError, 
-    ImageValidationError, 
-    PredictionError
-)
-from ..core.settings import settings
 from ..core.logger import get_logger
+from ..core.settings import settings
 from ..docs.sections.prediction_metadata import PredictionMetadata
-from ..utils.get_prediction_service import get_prediction_service
-from ..models.prediction_schemas import PredictionResponse
 from ..models.error_codes import ErrorCode
+from ..models.prediction_schemas import PredictionResponse
+from ..services.prediction import PneumoniaPredictionService
+from ..utils.exceptions import (
+    FileValidationError,
+    ImageValidationError,
+    PredictionError,
+)
+from ..utils.get_prediction_service import get_prediction_service
+from ..utils.security import calculate_file_hash, file_hash_cache, get_client_ip
+from ..utils.validation import (
+    get_image_stats,
+    validate_file_extension,
+    validate_file_size,
+    validate_image_content,
+    validate_image_integrity,
+)
 
 logger = get_logger(__name__)
 router = APIRouter()
@@ -39,7 +40,7 @@ limiter = Limiter(key_func=get_remote_address)
 
 
 @router.post(
-    "/predict", 
+    "/predict",
     response_model=PredictionResponse,
     tags=["Pneumonia Detection"],
     **prediction_metadata,
@@ -48,31 +49,31 @@ limiter = Limiter(key_func=get_remote_address)
 async def predict_pneumonia(
     request: Request,
     file: UploadFile = File(
-        ..., 
+        ...,
         description="Chest X-ray image file (JPG, JPEG, PNG - max 10MB)",
-        example="chest_xray.jpg"
+        example="chest_xray.jpg",
     ),
-    prediction_service: PneumoniaPredictionService = Depends(get_prediction_service)
+    prediction_service: PneumoniaPredictionService = Depends(get_prediction_service),
 ):
     """
     **Advanced AI Pneumonia Detection**
-    
+
     Analyzes chest X-ray images using state-of-the-art deep learning models to detect pneumonia
     with high accuracy and provides detailed medical recommendations.
-    
+
     **Process Flow:**
     1. **File Validation**: Size, format, and integrity checks
     2. **Content Analysis**: AI-powered image validation
     3. **AI Prediction**: Deep learning model inference
     4. **Result Analysis**: Confidence scoring and interpretation
     5. **Medical Guidance**: Contextual recommendations
-    
+
     **Security Features:**
     - Rate limiting (5 requests/minute per IP)
     - Duplicate detection and prevention
     - Comprehensive request logging
     - Multi-layer input validation
-    
+
     **Args:**
         request: FastAPI request object (for security tracking)
         file: Uploaded chest X-ray image file
@@ -87,13 +88,13 @@ async def predict_pneumonia(
 
     **Raises:**
         HTTPException: For validation, processing, or service errors
-        
+
     **Medical Disclaimer:**
         Results are for educational purposes only. Always consult
         healthcare professionals for medical diagnosis and treatment.
     """
     client_ip = get_client_ip(request)
-    
+
     # Validate prediction service is available
     if not prediction_service or not prediction_service.is_loaded():
         logger.error("Prediction service not available")
@@ -103,10 +104,10 @@ async def predict_pneumonia(
                 "detail": "Prediction service is not available",
                 "error_code": ErrorCode.SERVICE_UNAVAILABLE,
                 "service_status": "not_initialized",
-                "timestamp": time.strftime("%Y-%m-%dT%H:%M:%S.000Z", time.gmtime())
-            }
+                "timestamp": time.strftime("%Y-%m-%dT%H:%M:%S.000Z", time.gmtime()),
+            },
         )
-        
+
     if not prediction_service.is_loaded():
         logger.error("Prediction model not loaded")
         return JSONResponse(
@@ -115,21 +116,21 @@ async def predict_pneumonia(
                 "detail": "AI model is not loaded or failed to initialize",
                 "error_code": ErrorCode.MODEL_NOT_LOADED,
                 "service_status": "model_not_loaded",
-                "timestamp": time.strftime("%Y-%m-%dT%H:%M:%S.000Z", time.gmtime())
-            }
+                "timestamp": time.strftime("%Y-%m-%dT%H:%M:%S.000Z", time.gmtime()),
+            },
         )
-    
+
     # Validate file exists
     if not file.filename:
         return JSONResponse(
             status_code=status.HTTP_400_BAD_REQUEST,
             content={
                 "detail": "No file provided",
-                "error_code":  ErrorCode.NO_FILE_PROVIDED,
-                "timestamp": time.strftime("%Y-%m-%dT%H:%M:%S.000Z", time.gmtime())
-            }
+                "error_code": ErrorCode.NO_FILE_PROVIDED,
+                "timestamp": time.strftime("%Y-%m-%dT%H:%M:%S.000Z", time.gmtime()),
+            },
         )
-    
+
     # Validate file extension
     if not validate_file_extension(file.filename):
         return JSONResponse(
@@ -137,14 +138,14 @@ async def predict_pneumonia(
             content={
                 "detail": f"Unsupported file type. Allowed: {', '.join(settings.allowed_extensions)}",
                 "error_code": ErrorCode.INVALID_FILE_FORMAT,
-                "timestamp": time.strftime("%Y-%m-%dT%H:%M:%S.000Z", time.gmtime())
-            }
+                "timestamp": time.strftime("%Y-%m-%dT%H:%M:%S.000Z", time.gmtime()),
+            },
         )
-    
+
     try:
         # Read file contents
         contents = await file.read()
-        
+
         # Validate file size
         if not validate_file_size(contents):
             file_size_mb = len(contents) / (1024 * 1024)
@@ -156,10 +157,10 @@ async def predict_pneumonia(
                     "error_code": ErrorCode.FILE_TOO_LARGE,
                     "max_size_mb": max_size_mb,
                     "actual_size_mb": round(file_size_mb, 2),
-                    "timestamp": time.strftime("%Y-%m-%dT%H:%M:%S.000Z", time.gmtime())
-                }
+                    "timestamp": time.strftime("%Y-%m-%dT%H:%M:%S.000Z", time.gmtime()),
+                },
             )
-        
+
         # Check for duplicate uploads
         file_hash = calculate_file_hash(contents)
         if file_hash_cache.is_duplicate(file_hash, settings.cache_duration):
@@ -170,32 +171,34 @@ async def predict_pneumonia(
                     "error_code": ErrorCode.DUPLICATE_FILE,
                     "retry_after": settings.cache_duration,
                     "file_hash": file_hash,
-                    "timestamp": time.strftime("%Y-%m-%dT%H:%M:%S.000Z", time.gmtime())
-                }
+                    "timestamp": time.strftime("%Y-%m-%dT%H:%M:%S.000Z", time.gmtime()),
+                },
             )
-        
+
         # Validate image integrity and get PIL Image
         contents_io = io.BytesIO(contents)
         image = validate_image_integrity(contents_io)
-        
+
         # Validate image content (basic X-ray checks)
         if not validate_image_content(image):
-            logger.warning(f"Invalid image content detected: {file.filename} from {client_ip}")
+            logger.warning(
+                f"Invalid image content detected: {file.filename} from {client_ip}"
+            )
             return JSONResponse(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 content={
                     "detail": "Image does not appear to be a valid chest X-ray",
                     "error_code": ErrorCode.INVALID_IMAGE_CONTENT,
-                    "timestamp": time.strftime("%Y-%m-%dT%H:%M:%S.000Z", time.gmtime())
-                }
+                    "timestamp": time.strftime("%Y-%m-%dT%H:%M:%S.000Z", time.gmtime()),
+                },
             )
-        
+
         # Get image statistics for logging
         image_stats = get_image_stats(image)
-        
+
         # Make prediction
         result = prediction_service.predict(image)
-        
+
         # Log successful prediction
         logger.info(
             f"Prediction successful - IP: {client_ip}, "
@@ -205,9 +208,9 @@ async def predict_pneumonia(
             f"model: {result['model_type']}, "
             f"Confidence: {result['confidence']:.3f}"
         )
-        
+
         return PredictionResponse(**result)
-        
+
     except HTTPException:
         # Re-raise HTTP exceptions
         raise
@@ -217,9 +220,13 @@ async def predict_pneumonia(
             status_code=status.HTTP_400_BAD_REQUEST,
             content={
                 "detail": str(e),
-                "error_code": ErrorCode.FILE_TOO_LARGE if "size" in str(e).lower() else ErrorCode.INVALID_FILE_FORMAT,
-                "timestamp": time.strftime("%Y-%m-%dT%H:%M:%S.000Z", time.gmtime())
-            }
+                "error_code": (
+                    ErrorCode.FILE_TOO_LARGE
+                    if "size" in str(e).lower()
+                    else ErrorCode.INVALID_FILE_FORMAT
+                ),
+                "timestamp": time.strftime("%Y-%m-%dT%H:%M:%S.000Z", time.gmtime()),
+            },
         )
     except ImageValidationError as e:
         logger.error(f"Image validation error: {e}")
@@ -228,8 +235,8 @@ async def predict_pneumonia(
             content={
                 "detail": str(e),
                 "error_code": ErrorCode.IMAGE_VALIDATION_ERROR,
-                "timestamp": time.strftime("%Y-%m-%dT%H:%M:%S.000Z", time.gmtime())
-            }
+                "timestamp": time.strftime("%Y-%m-%dT%H:%M:%S.000Z", time.gmtime()),
+            },
         )
     except PredictionError as e:
         logger.error(f"Prediction error: {e}")
@@ -238,8 +245,8 @@ async def predict_pneumonia(
             content={
                 "detail": "Failed to process image",
                 "error_code": ErrorCode.PREDICTION_FAILED,
-                "timestamp": time.strftime("%Y-%m-%dT%H:%M:%S.000Z", time.gmtime())
-            }
+                "timestamp": time.strftime("%Y-%m-%dT%H:%M:%S.000Z", time.gmtime()),
+            },
         )
     except Exception as e:
         logger.error(f"Unexpected error in prediction: {e}", exc_info=True)
@@ -248,10 +255,10 @@ async def predict_pneumonia(
             content={
                 "detail": "Internal server error",
                 "error_code": ErrorCode.INTERNAL_SERVER_ERROR,
-                "timestamp": time.strftime("%Y-%m-%dT%H:%M:%S.000Z", time.gmtime())
-            }
+                "timestamp": time.strftime("%Y-%m-%dT%H:%M:%S.000Z", time.gmtime()),
+            },
         )
     finally:
         # Clean up
-        if 'file' in locals():
+        if "file" in locals():
             await file.close()

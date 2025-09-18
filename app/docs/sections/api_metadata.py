@@ -1,9 +1,11 @@
-from typing import Dict, Any
+from typing import Any, Dict
+
 from ...core.settings import settings
+
 
 class ApiMetadata:
     """Manages API documentation and metadata."""
-    
+
     @staticmethod
     def get_medical_disclaimer() -> str:
         """Get medical disclaimer section."""
@@ -137,9 +139,9 @@ class ApiMetadata:
             cls.get_monitoring_endpoints(),
             cls.get_documentation_links(),
             "<hr>",
-            "<p><strong>Built with FastAPI</strong> | <strong>Powered by ONNX</strong></p>"
+            "<p><strong>Built with FastAPI</strong> | <strong>Powered by ONNX</strong></p>",
         ]
-        
+
         return "".join(sections)
 
     @classmethod
@@ -148,20 +150,20 @@ class ApiMetadata:
         return [
             {
                 "name": "Health",
-                "description": "Health check and monitoring endpoints for service status"
+                "description": "Health check and monitoring endpoints for service status",
             },
             {
                 "name": "Pneumonia Detection",
-                "description": "AI-powered pneumonia detection from chest X-ray images"
+                "description": "AI-powered pneumonia detection from chest X-ray images",
             },
             {
                 "name": "Model",
-                "description": "Machine learning model information and statistics"
+                "description": "Machine learning model information and statistics",
             },
             {
                 "name": "Security",
-                "description": "Security status and protection metrics"
-            }
+                "description": "Security status and protection metrics",
+            },
         ]
 
     @classmethod
@@ -183,14 +185,11 @@ class ApiMetadata:
                 "url": "https://opensource.org/licenses/MIT",
             },
             "servers": [
-                {
-                    "url": "http://localhost:8000",
-                    "description": "Development server"
-                },
+                {"url": "http://localhost:8000", "description": "Development server"},
                 {
                     "url": "https://web-production-d9c43a.up.railway.app/",
-                    "description": "Production server"
-                }
+                    "description": "Production server",
+                },
             ],
-            "openapi_tags": cls.get_openapi_tags()
+            "openapi_tags": cls.get_openapi_tags(),
         }
