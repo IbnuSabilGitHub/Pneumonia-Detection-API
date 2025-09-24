@@ -58,7 +58,7 @@ class MiddlewareFactory:
             allow_methods=["GET", "POST"],
             allow_headers=["*"],
         )
-        logger.debug(f"✅ CORS middleware added with origins: {settings.cors_origins}")
+        logger.debug("✅ CORS middleware added with origins: %s", settings.cors_origins)
 
     @staticmethod
     def setup_trusted_host_middleware(app: FastAPI) -> None:

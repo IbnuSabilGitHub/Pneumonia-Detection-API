@@ -93,7 +93,7 @@ async def get_security_stats() -> SecurityStatsResponse:
             security_metrics = advanced_rate_limiter.get_security_status()
 
     except Exception as e:
-        logger.error(f"Failed to get security stats: {e}")
+        logger.error("Failed to get security stats: %s", e)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=SecurityStatsErrorResponse(

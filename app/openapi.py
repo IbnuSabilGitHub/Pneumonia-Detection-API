@@ -1,9 +1,13 @@
+""" 
+OpenAPI schema customization for the FastAPI application
+"""
 from fastapi.openapi.utils import get_openapi
 
 from .core.settings import settings
 
 
 def custom_openapi(app):
+    """Generate a custom OpenAPI schema for the FastAPI application."""
     if app.openapi_schema:
         return app.openapi_schema
     schema = get_openapi(

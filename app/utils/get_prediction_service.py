@@ -1,3 +1,6 @@
+"""
+Utility module to provide pneumonia prediction services
+"""
 from fastapi import HTTPException, Query, status
 
 from ..core.logger import get_logger
@@ -50,10 +53,10 @@ def get_prediction_service(
         try:
             service.load_model()
         except Exception as e:
-            logger.error(f"Failed to load {model} model: {e}")
+            logger.error("Failed to load %s model: %s", model, e)
             raise HTTPException(
                 status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
                 detail=f"Failed to load {model} model",
-            )
+            ) from e
 
     return service

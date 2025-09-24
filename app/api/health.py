@@ -92,7 +92,7 @@ async def health_check(
             uptime=uptime,
         )
     except Exception as e:
-        logger.error(f"Health check failed: {e}")
+        logger.error("Health check failed: %s", e)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=HealthErrorResponse(

@@ -84,7 +84,7 @@ async def get_security_status() -> SecurityStatusResponse:
         else:
             advanced_protection = advanced_rate_limiter.get_security_status()
     except Exception as e:
-        logger.error(f"Failed to get security status: {e}")
+        logger.error("Failed to get security status: %s", e)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=SecurityErrorResponse(

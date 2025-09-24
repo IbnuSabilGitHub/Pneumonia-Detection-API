@@ -1,3 +1,6 @@
+"""
+Main application module for the FastAPI web service
+"""
 import asyncio
 import time
 from contextlib import asynccontextmanager
@@ -30,7 +33,7 @@ async def lifespan(_: FastAPI):
     Handles startup and shutdown events for the FastAPI application.
     """
     # Startup
-    logger.info(f"🚀 Starting {settings.app_name} v{settings.app_version}")
+    logger.info("🚀 Starting %s %s", settings.app_name, settings.app_version)
 
     # Initialize startup manager and dependencies
     startup_manager = StartupManager()
@@ -62,25 +65,28 @@ async def lifespan(_: FastAPI):
     # Log startup summary
     if startup_result["errors"]:
         logger.warning(
-            f"⚠️ Application started with {len(startup_result['errors'])} errors"
+            "⚠️ Application started with %d errors", len(startup_result['errors'])
         )
         for error in startup_result["errors"]:
-            logger.warning(f"   • {error}")
+            logger.warning("   • %s", error)
 
     if startup_result["warnings"]:
         logger.warning(
-            f"⚠️ Application started with {len(startup_result['warnings'])} warnings"
+            "⚠️ Application started with %d warnings", len(startup_result['warnings'])
         )
         for warning in startup_result["warnings"]:
-            logger.warning(f"   • {warning}")
+            logger.warning("   • %s", warning)
 
     if startup_result["success_count"] == startup_result["total_services"]:
         logger.info(
-            f"✅ All {startup_result['total_services']} services initialized successfully"
+            "✅ All %d services initialized successfully",
+            startup_result['total_services'],
         )
     else:
         logger.warning(
-            f"⚠️ {startup_result['success_count']}/{startup_result['total_services']} services initialized"
+            "⚠️ %d/%d services initialized",
+            startup_result['success_count'],
+            startup_result['total_services'],
         )
 
     # Start background task: periodic cleanup of expired file hash cache
@@ -95,10 +101,10 @@ async def lifespan(_: FastAPI):
                 removed = file_hash_cache.cleanup_expired()
                 if removed:
                     logger.info(
-                        f"🧹 File hash cache cleanup removed {removed} expired entries"
+                        "🧹 File hash cache cleanup removed %d expired entries", removed
                     )
-            except Exception as e:
-                logger.error(f"Cache cleanup worker error: {e}")
+            except Exception as e:  # pylint: disable=broad-except
+                logger.error("Cache cleanup worker error: %s", e)
             # Wait with cancellation awareness
             try:
                 await asyncio.wait_for(stop_event.wait(), timeout=cleanup_interval)
@@ -119,8 +125,8 @@ async def lifespan(_: FastAPI):
             await cleanup_task
         await startup_manager.shutdown()
         logger.info("✅ Application shutdown completed successfully")
-    except Exception as e:
-        logger.error(f"❌ Error during shutdown: {e}")
+    except RuntimeError as e:
+        logger.error("❌ Error during shutdown: %s", e)
         logger.info("🔚 Application shutdown completed with errors")
 
 
@@ -135,32 +141,32 @@ def create_app() -> FastAPI:
     app_metadata = ApiMetadata.get_app_metadata()
 
     # create FastAPi metadata from template
-    app = FastAPI(lifespan=lifespan, **app_metadata)
-    app.openapi = lambda: custom_openapi(app)
+    app_instance = FastAPI(lifespan=lifespan, **app_metadata)
+    app_instance.openapi = lambda: custom_openapi(app_instance)
     # Setup all middleware using factory
-    MiddlewareFactory.setup_all_middleware(app)
+    MiddlewareFactory.setup_all_middleware(app_instance)
 
     # Include routers
-    app.include_router(health.router)
-    app.include_router(prediction.router, prefix="/pneumonia")
-    app.include_router(model_info.router, prefix="/pneumonia")
-    app.include_router(status.router, prefix="/security")
-    app.include_router(stats.router, prefix="/security")
+    app_instance.include_router(health.router)
+    app_instance.include_router(prediction.router, prefix="/pneumonia")
+    app_instance.include_router(model_info.router, prefix="/pneumonia")
+    app_instance.include_router(status.router, prefix="/security")
+    app_instance.include_router(stats.router, prefix="/security")
 
     # Setup global exception handlers
-    _setup_exception_handlers(app)
+    _setup_exception_handlers(app_instance)
 
     logger.info(
-        f"FastAPI application created: {settings.app_name} v{settings.app_version}"
+        "FastAPI application created: %s v%s", settings.app_name, settings.app_version
     )
-    return app
+    return app_instance
 
 
 def _setup_exception_handlers(app: FastAPI) -> None:
     """Setup global exception handlers for the application."""
 
     @app.exception_handler(413)
-    async def request_entity_too_large_handler(request, exc):
+    async def request_entity_too_large_handler():
         """Handle file too large errors."""
         return JSONResponse(
             status_code=413,

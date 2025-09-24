@@ -215,7 +215,7 @@ async def predict_pneumonia(
         # Re-raise HTTP exceptions
         raise
     except FileValidationError as e:
-        logger.error(f"File validation error: {e}")
+        logger.error("File validation error: %s", e)
         return JSONResponse(
             status_code=status.HTTP_400_BAD_REQUEST,
             content={
@@ -229,7 +229,7 @@ async def predict_pneumonia(
             },
         )
     except ImageValidationError as e:
-        logger.error(f"Image validation error: {e}")
+        logger.error("Image validation error: %s", e)
         return JSONResponse(
             status_code=status.HTTP_400_BAD_REQUEST,
             content={
@@ -239,7 +239,7 @@ async def predict_pneumonia(
             },
         )
     except PredictionError as e:
-        logger.error(f"Prediction error: {e}")
+        logger.error("Prediction error: %s", e)
         return JSONResponse(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             content={
@@ -249,7 +249,7 @@ async def predict_pneumonia(
             },
         )
     except Exception as e:
-        logger.error(f"Unexpected error in prediction: {e}", exc_info=True)
+        logger.error("Unexpected error in prediction: %s", e, exc_info=True)
         return JSONResponse(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             content={

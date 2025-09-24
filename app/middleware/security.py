@@ -195,16 +195,18 @@ async def logging_middleware(request: Request, call_next):
     client_ip = get_client_ip(request)
 
     # Log request
-    logger.info(f"Request: {request.method} {request.url.path} " f"from {client_ip}")
+    logger.info("Request: %s %s from %s", request.method, request.url.path, client_ip)
 
     response = await call_next(request)
 
     # Log response
     process_time = time.time() - start_time
     logger.info(
-        f"Response: {response.status_code} "
-        f"for {request.method} {request.url.path} "
-        f"({process_time:.3f}s)"
+        "Response: %d for %s %s (%.3fs)",
+        response.status_code,
+        request.method,
+        request.url.path,
+        process_time,
     )
 
     return response
@@ -229,7 +231,7 @@ async def error_handling_middleware(request: Request, call_next):
         raise
     except Exception as e:
         # Log unexpected errors
-        logger.error(f"Unexpected error: {e}", exc_info=True)
+        logger.error("Unexpected error: %s", e, exc_info=True)
 
         return JSONResponse(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,

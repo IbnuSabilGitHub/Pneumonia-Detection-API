@@ -72,7 +72,7 @@ def validate_image_integrity(contents: bytes) -> Image.Image:
         return image
 
     except (IOError, SyntaxError) as e:
-        raise ImageValidationError(f"Invalid image file: {e}")
+        raise ImageValidationError(f'Invalid image file: {e}') from e
 
 
 def validate_image_content(image: Image.Image) -> bool:
@@ -98,7 +98,7 @@ def validate_image_content(image: Image.Image) -> bool:
 
         # Size validation - X-rays should be reasonably sized
         if height < 100 or width < 100 or height > 2000 or width > 2000:
-            logger.warning(f"Image size validation failed: {width}x{height}")
+            logger.warning("Image size validation failed: %dx%d", width, height)
             return False
 
         # Intensity distribution check
@@ -107,11 +107,11 @@ def validate_image_content(image: Image.Image) -> bool:
 
         # X-rays should have reasonable contrast and not be too dark/bright
         if std_intensity < 20:
-            logger.warning(f"Low contrast detected: std={std_intensity}")
+            logger.warning("Low contrast detected: std=%s", std_intensity)
             return False
 
         if mean_intensity < 30 or mean_intensity > 225:
-            logger.warning(f"Unusual brightness detected: mean={mean_intensity}")
+            logger.warning("Unusual brightness detected: mean=%s", mean_intensity)
             return False
 
         # Check for reasonable intensity distribution
@@ -120,13 +120,13 @@ def validate_image_content(image: Image.Image) -> bool:
         non_zero_bins = np.count_nonzero(hist)
 
         if non_zero_bins < 10:  # Too few intensity levels
-            logger.warning(f"Poor intensity distribution: {non_zero_bins} bins")
+            logger.warning("Poor intensity distribution: %d bins", non_zero_bins)
             return False
 
         return True
 
-    except Exception as e:
-        logger.error(f"Error validating image content: {e}")
+    except (OSError, ValueError, TypeError) as e:
+        logger.error("Error validating image content: %s", e)
         return False
 
 

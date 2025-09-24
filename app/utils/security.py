@@ -67,7 +67,7 @@ class FileHashCache:
 
         removed = len(expired_keys)
         if removed:
-            logger.debug(f"Removed {removed} expired file hash entries")
+            logger.debug("Removed %d expired file hash entries", removed)
 
         # After removing expired entries, still enforce size (in case many new came in)
         self._enforce_size_limit()
@@ -92,7 +92,9 @@ class FileHashCache:
             for key, _ in oldest:
                 self.cache.pop(key, None)
             logger.warning(
-                f"FileHashCache size exceeded limit; evicted {overflow} oldest entries (max={self.max_size})"
+                "FileHashCache size exceeded limit; evicted %d oldest entries (max=%d)",
+                overflow,
+                self.max_size,
             )
 
 

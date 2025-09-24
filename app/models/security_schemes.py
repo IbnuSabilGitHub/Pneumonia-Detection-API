@@ -1,3 +1,6 @@
+"""
+Security system response schemas for FastAPI application
+"""
 from typing import Any, Dict, List, Optional
 
 from pydantic import BaseModel, Field
@@ -5,6 +8,7 @@ from pydantic import BaseModel, Field
 from .base import AdvancedProtection, BaseErrorResponse
 
 
+# SECURITY STATUS ENDPOINT RESPONSE SCHEMAS
 class SecurityStatusResponse(BaseModel):
     """
     **Advanced Security System Status Response**
@@ -65,6 +69,10 @@ class SecurityStatusResponse(BaseModel):
     )
 
     class Config:
+        """
+        JSON schema example for security status response.
+        """
+
         json_schema_extra = {
             "example": {
                 "service": "Pneumonia Detection API",
@@ -111,6 +119,10 @@ class SecurityErrorResponse(BaseErrorResponse):
     )
 
     class Config:
+        """
+        JSON schema example for security error response.
+        """
+
         json_schema_extra = {
             "example": {
                 "detail": "Rate limiter not initialized",
@@ -123,8 +135,6 @@ class SecurityErrorResponse(BaseErrorResponse):
 
 
 # SECURITY STATS ENDPOINT RESPONSE SCHEMAS
-
-
 class SecurityMetrics(BaseModel):
     """Security statistics and metrics data."""
 
@@ -154,6 +164,10 @@ class SecurityMetrics(BaseModel):
     )
 
     class Config:
+        """_summary_
+        JSON schema example for security metrics data.
+        """
+
         json_schema_extra = {
             "example": {
                 "total_requests": 1500,
@@ -205,14 +219,18 @@ class SecurityStatsResponse(BaseModel):
     )
     interpretation: Dict[str, Any] | None = Field(
         None,
-        description="Human-readable interpretation of key metrics (threat level, request rate, etc.)",
+        description="Human-readable interpretation of key metrics (threat level, request rate, etc.)",  # pylint: disable=C0301
     )
     analytics_summary: Dict[str, Any] | None = Field(
         None,
-        description="Optional summarized analytics (daily totals, storage backend info, threat level)",
+        description="Optional summarized analytics (daily totals, storage backend info, threat level)",  # pylint: disable=C0301
     )
 
     class Config:
+        """
+        JSON schema example for security stats response.
+        """
+
         json_schema_extra = {
             "example": {
                 "service": "Pneumonia Detection API",
@@ -259,6 +277,10 @@ class SecurityStatsErrorResponse(BaseErrorResponse):
     )
 
     class Config:
+        """
+        JSON schema example for security error response.
+        """
+
         json_schema_extra = {
             "example": {
                 "detail": "Security statistics service not available",

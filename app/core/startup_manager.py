@@ -44,7 +44,7 @@ class StartupManager:
 
         except Exception as e:
             error_msg = f"Prediction service initialization failed: {e}"
-            logger.error(f"❌ {error_msg}")
+            logger.error("❌ %s", error_msg)
             self.startup_errors.append(error_msg)
             return False
 
@@ -74,7 +74,8 @@ class StartupManager:
             if rate_limiter.storage:
                 storage_info = await rate_limiter.storage.get_info()
                 logger.info(
-                    f"✅ Rate limiter initialized with {storage_info.get('backend_type', 'unknown')} storage"
+                    "✅ Rate limiter initialized with %s storage",
+                    storage_info.get('backend_type', 'unknown'),
                 )
             else:
                 logger.warning("⚠️ Rate limiter initialized without storage backend")
@@ -86,7 +87,9 @@ class StartupManager:
         except Exception as e:
             # Try fallback to memory storage
             try:
-                logger.warning(f"Primary rate limiter failed, attempting fallback: {e}")
+                logger.warning(
+                    "Primary rate limiter failed, attempting fallback: %s", e
+                )
                 fallback_limiter = await create_advanced_rate_limiter(
                     storage_type=StorageType.MEMORY, storage_config={"max_size": 1000}
                 )
@@ -102,7 +105,7 @@ class StartupManager:
                 error_msg = (
                     f"Rate limiter initialization failed completely: {fallback_error}"
                 )
-                logger.error(f"❌ {error_msg}")
+                logger.error("❌ %s", error_msg)
                 self.startup_errors.append(error_msg)
                 return False
 
@@ -175,20 +178,22 @@ class StartupManager:
 
         # Log startup summary
         if self.startup_errors:
-            logger.error(f"❌ Startup completed with {len(self.startup_errors)} errors")
+            logger.error("❌ Startup completed with %d errors", len(self.startup_errors))
             for error in self.startup_errors:
-                logger.error(f"   • {error}")
+                logger.error("   • %s", error)
 
         if self.warnings:
-            logger.warning(f"⚠️ Startup completed with {len(self.warnings)} warnings")
+            logger.warning("⚠️ Startup completed with %d warnings", len(self.warnings))
             for warning in self.warnings:
-                logger.warning(f"   • {warning}")
+                logger.warning("   • %s", warning)
 
         if success_count == total_services:
-            logger.info(f"✅ All {total_services} services initialized successfully")
+            logger.info("✅ All %d services initialized successfully", total_services)
         else:
             logger.warning(
-                f"⚠️ {success_count}/{total_services} services initialized successfully"
+                "⚠️ %d/%d services initialized successfully",
+                success_count,
+                total_services,
             )
 
         return {
@@ -219,7 +224,7 @@ class StartupManager:
                     logger.info("✅ Rate limiter cleanup completed (memory storage)")
             except Exception as e:
                 error_msg = f"Rate limiter shutdown error: {e}"
-                logger.error(f"❌ {error_msg}")
+                logger.error("❌ %s", error_msg)
                 shutdown_errors.append(error_msg)
 
         # Shutdown prediction service
@@ -235,11 +240,11 @@ class StartupManager:
                     )
             except Exception as e:
                 error_msg = f"Prediction service shutdown error: {e}"
-                logger.error(f"❌ {error_msg}")
+                logger.error("❌ %s", error_msg)
                 shutdown_errors.append(error_msg)
 
         if shutdown_errors:
-            logger.error(f"❌ Shutdown completed with {len(shutdown_errors)} errors")
+            logger.error("❌ Shutdown completed with %d errors", len(shutdown_errors))
         else:
             logger.info("✅ All services shut down successfully")
 

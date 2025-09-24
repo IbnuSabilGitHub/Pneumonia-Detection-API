@@ -62,30 +62,34 @@ class PneumoniaPredictionService:
             self._load_model_stats()
 
             logger.info(
-                f"Model loaded successfully from {self.model_path} "
-                f"(mean={self.mean:.4f}, std={self.std:.4f})"
+                "Model loaded successfully from %s (mean=%.4f, std=%.4f)",
+                self.model_path,
+                self.mean,
+                self.std,
             )
 
         except Exception as e:
-            logger.error(f"Failed to load model: {e}")
-            raise ModelLoadError(f"Failed to load model: {e}")
+            logger.error("Failed to load model: %s", e)
+            raise ModelLoadError(f"Failed to load model: {e}") from e
 
     def _load_model_stats(self) -> None:
         """Load model normalization statistics."""
         if not os.path.exists(self.stats_path):
             logger.warning(
-                f"Model stats file not found at {self.stats_path}, "
-                f"using default values (mean={self.mean}, std={self.std})"
+                "Model stats file not found at %s, using default values (mean=%s, std=%s)",
+                self.stats_path,
+                self.mean,
+                self.std,
             )
             return
 
         try:
-            with open(self.stats_path, "r") as f:
+            with open(self.stats_path, "r", encoding="utf-8") as f:
                 stats = json.load(f)
                 self.mean = stats.get("mean", self.mean)
                 self.std = stats.get("std", self.std)
-        except Exception as e:
-            logger.warning(f"Failed to load model stats: {e}, using defaults")
+        except (ValueError, KeyError, IOError) as e:
+            logger.warning("Failed to load model stats: %s, using defaults", e)
 
     def preprocess_image(self, image: Image.Image) -> np.ndarray:
         """
@@ -193,8 +197,8 @@ class PneumoniaPredictionService:
             }
 
         except Exception as e:
-            logger.error(f"Prediction error: {e}")
-            raise PredictionError(f"Prediction failed: {e}")
+            logger.error("Prediction error: %s", e)
+            raise PredictionError(f"Prediction failed: {e}") from e
 
     def is_loaded(self) -> bool:
         """Check if the model is loaded."""
