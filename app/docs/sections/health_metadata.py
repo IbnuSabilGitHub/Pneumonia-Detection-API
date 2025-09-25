@@ -1,5 +1,8 @@
 from typing import Any, Dict
 
+from ...docs.base_builder import build_response
+from ...models.health_schemas import HealthErrorResponse, HealthResponse
+
 
 class HealthMetadata:
     """Metadata for Health Check Endpoint."""
@@ -68,6 +71,32 @@ class HealthMetadata:
     def get_response_description() -> str:
         return "Service health status with detailed information"
 
+    @staticmethod
+    def get_200_response() -> Dict[str, Any]:
+        return build_response(
+            description="Successful health status response",
+            model=HealthResponse,
+            example={
+                "status": "healthy",
+                "model_loaded": True,
+                "version": "3.4.2",
+                "uptime": 361.5,
+            },
+        )
+
+    def get_500_response() -> Dict[str, Any]:
+        return build_response(
+            description="Internal server error during health check",
+            model=HealthErrorResponse,
+            example={
+                "error": {
+                    "code": 500,
+                    "message": "Internal server error",
+                    "details": "Detailed error information",
+                }
+            },
+        )
+
     @classmethod
     def get_full_description(cls) -> str:
         """Get complete Health Check description by combining all sections."""
@@ -82,10 +111,19 @@ class HealthMetadata:
         return "".join(sections)
 
     @classmethod
+    def get_response(cls) -> Dict[int, Dict[str, Any]]:
+        """Get all possible response descriptions for the endpoint."""
+        return {
+            200: cls.get_200_response(),
+            500: cls.get_500_response(),
+        }
+
+    @classmethod
     def get_metadata(cls) -> Dict[str, Any]:
         """Get complete metadata for FastAPI endpoint configuration."""
         return {
             "summary": "Service Health Check",
             "description": cls.get_full_description(),
             "response_description": cls.get_response_description(),
+            "responses": cls.get_response(),
         }

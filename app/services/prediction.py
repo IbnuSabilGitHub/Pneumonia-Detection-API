@@ -217,6 +217,7 @@ class PneumoniaPredictionService:
 
     def is_loaded(self) -> bool:
         """Check if the model is loaded."""
+        logger.info("Model loaded: %s", self.session is not None)
         return self.session is not None
 
     def get_model_info(self) -> Dict[str, Any]:

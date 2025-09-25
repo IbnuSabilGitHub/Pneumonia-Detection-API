@@ -41,6 +41,9 @@ class Settings(BaseSettings):
     # Advanced Rate Limiting - Main Settings
     advanced_rate_limiting_enabled: bool = False
 
+    # Rate limiting path to be excluded
+    excluded_paths: List[str] = ["/health", "/", "/docs", "/redoc", "/openapi.json"]
+
     # Basic Rate Limiting
     max_requests_per_ip: int = 50
     max_fingerprint_requests: int = 10
@@ -158,6 +161,7 @@ class Settings(BaseSettings):
         return {
             # Basic Rate Limiting
             "enabled": self.advanced_rate_limiting_enabled,
+            "excluded_paths": self.excluded_paths,
             "max_requests_per_ip": self.max_requests_per_ip,
             "max_fingerprint_requests": self.max_fingerprint_requests,
             "window_size": self.rate_limit_window_size,

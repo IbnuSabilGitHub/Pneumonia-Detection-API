@@ -8,6 +8,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from slowapi import Limiter
 from slowapi.util import get_remote_address
 
+from ..core.dependencies import get_prediction_service as get_prediction_service_dep
 from ..core.logger import get_logger
 from ..core.settings import settings
 from ..docs.sections.health_metadata import HealthMetadata
@@ -26,9 +27,12 @@ _start_time = time.time()
 
 
 def get_prediction_service() -> PneumoniaPredictionService:
-    """Dependency to get prediction service instance."""
-    # This will be injected by the main app
-    return getattr(get_prediction_service, "_service", None)
+    """
+    Dependency to get prediction service instance from dependency container.
+
+    Uses the proper dependency injection system instead of manual injection.
+    """
+    return get_prediction_service_dep()
 
 
 @router.get(
@@ -82,8 +86,12 @@ async def health_check(
             status_val = "healthy"
         elif prediction_service and not model_loaded:
             status_val = "partial"  # Service exists but model not loaded
+            logger.warning("Prediction service available but model not loaded")
         else:
-            status_val = "partial"  # Service not available but app is running
+            logger.error(
+                "Prediction service not available - service initialization failed"
+            )
+            status_val = "unhealthy"  # Critical service not available
 
         return HealthResponse(
             status=status_val,

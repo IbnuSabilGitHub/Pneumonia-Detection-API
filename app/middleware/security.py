@@ -9,6 +9,7 @@ from fastapi.responses import JSONResponse
 from starlette.middleware.base import BaseHTTPMiddleware
 
 from ..core.logger import get_logger
+from ..core.settings import settings
 from ..utils.security import get_client_ip
 
 logger = get_logger(__name__)
@@ -78,8 +79,7 @@ class SecurityMiddleware(BaseHTTPMiddleware):
 
     def _should_skip_rate_limiting(self, path: str) -> bool:
         """Check if endpoint should skip rate limiting."""
-        excluded_paths = ["/health", "/", "/docs", "/redoc", "/openapi.json"]
-        return path in excluded_paths
+        return path in getattr(settings, "excluded_paths", [])
 
     def _extract_file_hash(self, request) -> str:
         """Extract file hash for upload endpoints."""
