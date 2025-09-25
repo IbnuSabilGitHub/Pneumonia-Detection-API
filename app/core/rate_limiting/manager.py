@@ -14,16 +14,15 @@ class RateLimitManager:
     def __init__(
         self,
         storage: Optional[StorageBackend] = None,
-        max_requests_per_ip: int = 10,
-        max_fingerprint_requests: int = 3,
-        window_size: int = 60,
+        config: Optional[Dict] = None,
     ):
         self.storage = storage
+        self.config = config or {}
 
-        # Configuration
-        self.max_requests_per_ip = max_requests_per_ip
-        self.max_fingerprint_requests = max_fingerprint_requests
-        self.window_size = window_size  # Time window in seconds
+        # Configuration from centralized settings with fallbacks
+        self.max_requests_per_ip = self.config.get("max_requests_per_ip", 10)
+        self.max_fingerprint_requests = self.config.get("max_fingerprint_requests", 3)
+        self.window_size = self.config.get("window_size", 60)  # Time window in seconds
 
     async def _get_from_storage(self, key: str, default=None):
         """Get value from storage with fallback."""
@@ -114,12 +113,17 @@ class RateLimitManager:
         return False
 
     async def apply_reduced_limits(
-        self, client_ip: str, fingerprint: str, reduction_factor: float = 0.5
+        self, client_ip: str, fingerprint: str, reduction_factor: Optional[float] = None
     ) -> Tuple[bool, Dict]:
         """
         Apply reduced rate limits during high attack periods.
         Returns: (is_allowed, details)
         """
+        # Use configured reduction factor or default
+        reduction_factor = reduction_factor or self.config.get(
+            "attack_reduction_factor", 0.5
+        )
+
         reduced_ip_limit = int(self.max_requests_per_ip * reduction_factor)
         reduced_fingerprint_limit = int(
             self.max_fingerprint_requests * reduction_factor

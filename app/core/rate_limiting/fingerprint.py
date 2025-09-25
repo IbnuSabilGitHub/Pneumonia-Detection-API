@@ -14,15 +14,19 @@ class FingerprintManager:
     Handles request fingerprinting and fingerprint-based tracking.
     """
 
-    def __init__(self, storage: Optional[StorageBackend] = None):
+    def __init__(
+        self, storage: Optional[StorageBackend] = None, config: Optional[Dict] = None
+    ):
         self.storage = storage
+        self.config = config or {}
 
         # Fallback in-memory storage
         self.ip_fingerprints: Dict[str, List[RequestFingerprint]] = {}
         self.blocked_fingerprints: Dict[str, float] = {}
 
         # Configuration
-        self.block_duration = 100  # 5 minutes
+        self.block_duration = self.config.get("fingerprint_block_duration", 300)
+        self.max_fingerprints_per_ip = self.config.get("max_fingerprints_per_ip", 100)
 
     async def _get_from_storage(self, key: str, default=None):
         """Get value from storage with fallback."""
@@ -91,7 +95,9 @@ class FingerprintManager:
 
         if self.storage:
             return await self._append_to_storage_list(
-                ip_fingerprints_key, fingerprint.to_dict(), max_length=100
+                ip_fingerprints_key,
+                fingerprint.to_dict(),
+                max_length=self.max_fingerprints_per_ip,
             )
         else:
             # Fallback to in-memory storage
@@ -99,9 +105,11 @@ class FingerprintManager:
                 self.ip_fingerprints[client_ip] = []
 
             self.ip_fingerprints[client_ip].append(fingerprint)
-            # Keep only last 100 fingerprints
-            if len(self.ip_fingerprints[client_ip]) > 100:
-                self.ip_fingerprints[client_ip] = self.ip_fingerprints[client_ip][-100:]
+            # Keep only last N fingerprints
+            if len(self.ip_fingerprints[client_ip]) > self.max_fingerprints_per_ip:
+                self.ip_fingerprints[client_ip] = self.ip_fingerprints[client_ip][
+                    -self.max_fingerprints_per_ip :
+                ]
 
             return True
 

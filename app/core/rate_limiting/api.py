@@ -1,6 +1,7 @@
 import logging
 from typing import Any, Dict, Optional
 
+from app.core.settings import Settings
 from app.core.storage_factory import StorageType
 
 from .core import AdvancedRateLimiter
@@ -14,7 +15,7 @@ async def create_advanced_rate_limiter(
     storage_config: Optional[Dict[str, Any]] = None,
 ) -> AdvancedRateLimiter:
     """Create and initialize advanced rate limiter with storage backend."""
-    limiter = AdvancedRateLimiter(storage_config=storage_config)
+    limiter = AdvancedRateLimiter(storage_config=storage_config, settings=Settings())
 
     # Initialize storage
     success = await limiter.initialize_storage(storage_type, storage_config)

@@ -16,6 +16,57 @@ router = APIRouter()
 status_metadata = StatusMetadata.get_metadata()
 
 
+def _map_security_data_to_model(security_data: dict) -> dict:
+    """
+    Map the security data from rate limiter to AdvancedProtection model format.
+
+    Args:
+        security_data: Raw security data from rate limiter
+
+    Returns:
+        dict: Mapped data matching AdvancedProtection model schema
+    """
+    # Extract values with proper defaults and type conversions
+    global_attack_score = security_data.get("global_attack_score", 0.0)
+    requests_per_minute = security_data.get("requests_per_minute", 0)
+
+    # Handle recent_unique_ips (can be from multiple sources)
+    recent_unique_ips = (
+        security_data.get("recent_unique_ips", 0)
+        or security_data.get("unique_ips_last_hour", 0)
+        or 0
+    )
+
+    # Handle blocked_fingerprints (ensure it's an integer)
+    blocked_fingerprints = security_data.get("blocked_fingerprints", 0)
+    if isinstance(blocked_fingerprints, str):
+        # Convert "unknown" to 0
+        blocked_fingerprints = 0
+    elif not isinstance(blocked_fingerprints, int):
+        blocked_fingerprints = 0
+
+    # Handle storage_type (map from storage_backend)
+    storage_type = (
+        security_data.get("storage_type")
+        or security_data.get("storage_backend")
+        or "memory"
+    )
+
+    # Optional fields
+    avg_response_time_ms = security_data.get("avg_response_time_ms")
+    total_requests_24h = security_data.get("total_requests_24h")
+
+    return {
+        "global_attack_score": float(global_attack_score),
+        "requests_per_minute": int(requests_per_minute),
+        "recent_unique_ips": int(recent_unique_ips),
+        "blocked_fingerprints": int(blocked_fingerprints),
+        "storage_type": str(storage_type),
+        "avg_response_time_ms": avg_response_time_ms,
+        "total_requests_24h": total_requests_24h,
+    }
+
+
 @router.get(
     "/status",
     tags=["Security"],
@@ -78,11 +129,13 @@ async def get_security_status() -> SecurityStatusResponse:
             hasattr(advanced_rate_limiter, "_storage_initialized")
             and advanced_rate_limiter._storage_initialized
         ):
-            advanced_protection = (
-                await advanced_rate_limiter.get_security_status_async()
-            )
+            security_data = await advanced_rate_limiter.get_security_status_async()
         else:
-            advanced_protection = advanced_rate_limiter.get_security_status()
+            security_data = advanced_rate_limiter.get_security_status()
+
+        # Map the security data to match AdvancedProtection model
+        advanced_protection = _map_security_data_to_model(security_data)
+
     except Exception as e:
         logger.error("Failed to get security status: %s", e)
         raise HTTPException(

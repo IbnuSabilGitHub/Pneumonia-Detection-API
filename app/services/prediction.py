@@ -124,6 +124,17 @@ class PneumoniaPredictionService:
             return model_config.TARGET_SIZE_B0
         return model_config.TARGET_SIZE
 
+    def _get_architecture_description(self) -> str:
+        """Get model architecture description based on model type."""
+        if "efficientnet_b0" in self.model_type.lower():
+            return (
+                "EfficientNet-B0 based pneumonia detection model with transfer learning"
+            )
+        elif "standard" in self.model_type.lower():
+            return "CNN-based pneumonia detection model with custom architecture"
+        else:
+            return "Deep learning pneumonia detection model"
+
     def _generate_medical_recommendation(
         self, prediction: str, confidence: float
     ) -> str:
@@ -193,7 +204,11 @@ class PneumoniaPredictionService:
                     "PNEUMONIA": float(probs[1]),
                 },
                 "medical_recommendation": recommendation,
-                "model_type": self.model_type,
+                "model_info": {
+                    "model_type": self.model_type,
+                    "model_version": "v1.0",
+                    "architecture": self._get_architecture_description(),
+                },
             }
 
         except Exception as e:

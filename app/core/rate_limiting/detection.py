@@ -14,22 +14,46 @@ class AttackDetector:
     behavioral anomalies, and global attack scoring.
     """
 
-    def __init__(self, storage: Optional[StorageBackend] = None):
+    def __init__(
+        self, storage: Optional[StorageBackend] = None, config: Optional[Dict] = None
+    ):
         self.storage = storage
+        self.config = config or {}
+
+        # Get configuration values with defaults
+        self.ip_switching_threshold = self.config.get("ip_switching_threshold", 3)
+        self.suspicious_ip_changes_threshold = self.config.get(
+            "suspicious_ip_changes_threshold", 5
+        )
+        self.bot_behavior_variance = self.config.get("bot_behavior_variance", 0.1)
+        self.global_attack_threshold = self.config.get("global_attack_threshold", 0.8)
+        self.coordinated_attack_threshold = self.config.get(
+            "coordinated_attack_threshold", 3
+        )
+        self.bot_timing_threshold = self.config.get("bot_timing_threshold", 5.0)
+        self.ip_switching_detection_window = self.config.get(
+            "ip_switching_detection_window", 300
+        )
+        self.behavioral_analysis_window = self.config.get(
+            "behavioral_analysis_window", 300
+        )
+        self.global_attack_score_window = self.config.get(
+            "global_attack_score_window", 60
+        )
+
+        # In-memory limits
+        max_recent_ips = self.config.get("max_recent_ips", 1000)
+        max_request_patterns = self.config.get("max_request_patterns_per_ip", 10)
+        max_file_hash_requests = self.config.get("max_file_hash_requests", 100)
+        max_global_request_rate = self.config.get("max_global_request_rate", 1000)
 
         # Fallback in-memory storage for immediate operations
-        self.recent_ips: deque = deque(maxlen=1000)
+        self.recent_ips: deque = deque(maxlen=max_recent_ips)
         self.ip_change_patterns: Dict[str, List[float]] = defaultdict(list)
         self.request_patterns: Dict[str, List[float]] = defaultdict(list)
         self.file_hash_requests: Dict[str, List[tuple]] = defaultdict(list)
-        self.global_request_rate: deque = deque(maxlen=1000)
+        self.global_request_rate: deque = deque(maxlen=max_global_request_rate)
         self.attack_score: float = 0.0
-
-        # Configuration
-        self.ip_switching_threshold = 50  # Same fingerprint from 3+ IPs
-        self.suspicious_ip_changes_threshold = 50  # Lower threshold for IP changes
-        self.bot_behavior_variance = 1  # Request timing variances
-        self.global_attack_threshold = 10  # Attack score threshold
 
     async def _get_storage_list(self, key: str) -> List[Any]:
         """Get list from storage."""
@@ -79,7 +103,7 @@ class AttackDetector:
         self.recent_ips.append((client_ip, current_time))
 
         # Clean old entries
-        cutoff_time = current_time - 300  # 5 minutes
+        cutoff_time = current_time - self.ip_switching_detection_window
         while self.recent_ips and self.recent_ips[0][1] < cutoff_time:
             self.recent_ips.popleft()
 
@@ -93,7 +117,7 @@ class AttackDetector:
             # Simplified check for now
         ]
 
-        if len(set(fingerprint_ips)) > 3:
+        if len(set(fingerprint_ips)) > self.ip_switching_threshold:
             logger.warning(
                 f"🚨 IP switching attack detected: fingerprint {fingerprint} from {len(set(fingerprint_ips))} IPs"
             )
@@ -125,8 +149,8 @@ class AttackDetector:
         # Get recent IP activities
         recent_activities = await self._get_storage_list(recent_ips_key)
 
-        # Filter activities from last 5 minutes
-        cutoff_time = current_time - 300
+        # Filter activities from detection window
+        cutoff_time = current_time - self.ip_switching_detection_window
         recent_activities = [
             activity
             for activity in recent_activities
@@ -167,7 +191,7 @@ class AttackDetector:
             self.file_hash_requests[file_hash].append((client_ip, current_time))
 
             # Clean old entries
-            cutoff_time = current_time - 300  # 5 minutes
+            cutoff_time = current_time - self.behavioral_analysis_window
             self.file_hash_requests[file_hash] = [
                 (ip, ts)
                 for ip, ts in self.file_hash_requests[file_hash]
@@ -176,7 +200,7 @@ class AttackDetector:
 
             # Check if same file from multiple IPs
             unique_ips = set(ip for ip, _ in self.file_hash_requests[file_hash])
-            if len(unique_ips) > 3:  # Same file from 3+ different IPs
+            if len(unique_ips) > self.coordinated_attack_threshold:
                 logger.warning(
                     f"🚨 Coordinated attack detected: same file hash from {len(unique_ips)} IPs"
                 )
@@ -186,7 +210,9 @@ class AttackDetector:
         self.request_patterns[client_ip].append(current_time)
         if len(self.request_patterns[client_ip]) > 3:
             intervals = []
-            requests = self.request_patterns[client_ip][-10:]  # Last 10 requests
+            requests = self.request_patterns[client_ip][
+                -self.config.get("max_request_patterns_per_ip", 10) :
+            ]
             for i in range(1, len(requests)):
                 intervals.append(requests[i] - requests[i - 1])
 
@@ -197,7 +223,10 @@ class AttackDetector:
                     intervals
                 )
 
-                if variance < 0.1 and avg_interval < 5:  # Very regular, fast requests
+                if (
+                    variance < self.bot_behavior_variance
+                    and avg_interval < self.bot_timing_threshold
+                ):
                     logger.warning(
                         f"🚨 Bot behavior detected: regular intervals from {client_ip}"
                     )
@@ -223,8 +252,8 @@ class AttackDetector:
             # Get file request history
             file_requests = await self._get_storage_list(file_requests_key)
 
-            # Filter recent requests (5 minutes)
-            cutoff_time = current_time - 300
+            # Filter recent requests
+            cutoff_time = current_time - self.behavioral_analysis_window
             recent_file_requests = [
                 req
                 for req in file_requests
@@ -233,7 +262,7 @@ class AttackDetector:
 
             # Check unique IPs for same file
             unique_ips = set(req.get("ip") for req in recent_file_requests)
-            if len(unique_ips) > 3:
+            if len(unique_ips) > self.coordinated_attack_threshold:
                 logger.warning(
                     f"🚨 Coordinated attack detected: same file hash from {len(unique_ips)} IPs"
                 )
@@ -241,7 +270,11 @@ class AttackDetector:
 
         # Pattern 2: Perfect timing patterns (bot behavior)
         timing_key = f"request_timing:{client_ip}"
-        await self._append_to_storage_list(timing_key, current_time, max_length=10)
+        await self._append_to_storage_list(
+            timing_key,
+            current_time,
+            max_length=self.config.get("max_request_patterns_per_ip", 10),
+        )
 
         request_times = await self._get_storage_list(timing_key)
         if len(request_times) > 3:
@@ -260,7 +293,10 @@ class AttackDetector:
                     intervals
                 )
 
-                if variance < self.bot_behavior_variance and avg_interval < 5:
+                if (
+                    variance < self.bot_behavior_variance
+                    and avg_interval < self.bot_timing_threshold
+                ):
                     logger.warning(
                         f"🚨 Bot behavior detected: regular intervals from {client_ip}"
                     )
@@ -276,7 +312,7 @@ class AttackDetector:
         self.global_request_rate.append(current_time)
 
         # Clean old entries
-        cutoff_time = current_time - 60  # 1 minute
+        cutoff_time = current_time - self.global_attack_score_window
         while self.global_request_rate and self.global_request_rate[0] < cutoff_time:
             self.global_request_rate.popleft()
 
@@ -306,14 +342,16 @@ class AttackDetector:
         # Update global request rate
         global_rate_key = "global_request_rate"
         await self._append_to_storage_list(
-            global_rate_key, current_time, max_length=1000
+            global_rate_key,
+            current_time,
+            max_length=self.config.get("max_global_request_rate", 1000),
         )
 
         # Get recent requests
         recent_requests = await self._get_storage_list(global_rate_key)
 
-        # Filter last minute
-        cutoff_time = current_time - 60
+        # Filter last window
+        cutoff_time = current_time - self.global_attack_score_window
         recent_requests = [
             req_time
             for req_time in recent_requests

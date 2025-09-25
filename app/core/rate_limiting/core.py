@@ -5,6 +5,7 @@ from typing import Any, Dict, Optional, Tuple
 from app.core.rate_limiting.detection import AttackDetector
 from app.core.rate_limiting.fingerprint import FingerprintManager
 from app.core.rate_limiting.manager import RateLimitManager
+from app.core.settings import Settings
 from app.core.storage_backends import StorageBackend
 from app.core.storage_factory import StorageFactory, StorageType
 
@@ -21,22 +22,45 @@ class AdvancedRateLimiter:
         self,
         storage_backend: Optional[StorageBackend] = None,
         storage_config: Optional[Dict[str, Any]] = None,
+        settings: Optional[Settings] = None,
     ):
         # Storage backend
         self.storage: Optional[StorageBackend] = storage_backend
         self.storage_config = storage_config or {}
+
+        # Settings configuration
+        self.settings = settings
+        if self.settings:
+            self.rate_limiting_config = self.settings.get_rate_limiting_config()
+        else:
+            # Fallback configuration
+            self.rate_limiting_config = {
+                "max_requests_per_ip": 10,
+                "max_fingerprint_requests": 3,
+                "window_size": 60,
+                "attack_block_duration": 300,
+                "global_attack_threshold": 0.8,
+            }
 
         # Component initialization (will be done after storage is ready)
         self.attack_detector: Optional[AttackDetector] = None
         self.fingerprint_manager: Optional[FingerprintManager] = None
         self.rate_limit_manager: Optional[RateLimitManager] = None
 
-        # Configuration
-        self.max_requests_per_ip = 10
-        self.max_fingerprint_requests = 3  # More strict fingerprint limit
-        self.window_size = 60  # 1 minute
-        self.attack_block_duration = 300  # 5 minutes
-        self.global_attack_threshold = 0.8  # Attack score threshold
+        # Configuration from centralized settings
+        self.max_requests_per_ip = self.rate_limiting_config.get(
+            "max_requests_per_ip", 10
+        )
+        self.max_fingerprint_requests = self.rate_limiting_config.get(
+            "max_fingerprint_requests", 3
+        )
+        self.window_size = self.rate_limiting_config.get("window_size", 60)
+        self.attack_block_duration = self.rate_limiting_config.get(
+            "attack_block_duration", 300
+        )
+        self.global_attack_threshold = self.rate_limiting_config.get(
+            "global_attack_threshold", 0.8
+        )
 
         # Storage initialization flag
         self._storage_initialized = False
@@ -70,28 +94,32 @@ class AdvancedRateLimiter:
             return False
 
     async def _initialize_components(self):
-        """Initialize all component classes with the storage backend."""
-        self.attack_detector = AttackDetector(storage=self.storage)
-        self.fingerprint_manager = FingerprintManager(storage=self.storage)
+        """Initialize all component classes with the storage backend and centralized config."""
+        self.attack_detector = AttackDetector(
+            storage=self.storage, config=self.rate_limiting_config
+        )
+        self.fingerprint_manager = FingerprintManager(
+            storage=self.storage, config=self.rate_limiting_config
+        )
         self.rate_limit_manager = RateLimitManager(
-            storage=self.storage,
-            max_requests_per_ip=self.max_requests_per_ip,
-            max_fingerprint_requests=self.max_fingerprint_requests,
-            window_size=self.window_size,
+            storage=self.storage, config=self.rate_limiting_config
         )
         self._components_initialized = True
-        logger.info("All rate limiting components initialized")
+        logger.info(
+            "All rate limiting components initialized with centralized configuration"
+        )
 
     def _ensure_components_initialized(self):
         """Ensure components are initialized with fallback to no-storage mode."""
         if not self._components_initialized:
-            self.attack_detector = AttackDetector(storage=self.storage)
-            self.fingerprint_manager = FingerprintManager(storage=self.storage)
+            self.attack_detector = AttackDetector(
+                storage=self.storage, config=self.rate_limiting_config
+            )
+            self.fingerprint_manager = FingerprintManager(
+                storage=self.storage, config=self.rate_limiting_config
+            )
             self.rate_limit_manager = RateLimitManager(
-                storage=self.storage,
-                max_requests_per_ip=self.max_requests_per_ip,
-                max_fingerprint_requests=self.max_fingerprint_requests,
-                window_size=self.window_size,
+                storage=self.storage, config=self.rate_limiting_config
             )
             self._components_initialized = True
 
@@ -193,7 +221,7 @@ class AdvancedRateLimiter:
                 reduced_allowed,
                 reduced_details,
             ) = await self.rate_limit_manager.apply_reduced_limits(
-                client_ip, fingerprint, reduction_factor=0.5
+                client_ip, fingerprint
             )
 
             if not reduced_allowed:

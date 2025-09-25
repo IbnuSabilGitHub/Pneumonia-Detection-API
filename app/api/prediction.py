@@ -205,7 +205,7 @@ async def predict_pneumonia(
             f"File: {file.filename}, Hash: {file_hash[:8]}, "
             f"Size: {image_stats['size']}, "
             f"Result: {result['prediction']}, "
-            f"model: {result['model_type']}, "
+            f"model: {result['model_info']['model_type']}, "
             f"Confidence: {result['confidence']:.3f}"
         )
 
