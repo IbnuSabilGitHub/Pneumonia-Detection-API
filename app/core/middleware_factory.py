@@ -1,6 +1,15 @@
 """
-Middleware factory for centralized middleware configuration.
+Middleware factory for centralized middleware configuration and setup.
+
+This module provides a factory pattern for setting up all application middleware
+in the correct order with proper configuration. It handles security middleware,
+CORS, trusted hosts, rate limiting, and custom HTTP middleware.
+
+The middleware is applied in reverse order (last added executes first), so the
+factory ensures proper ordering for security and functionality.
 """
+
+from typing import Dict, List
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -22,18 +31,22 @@ logger = get_logger(__name__)
 
 class MiddlewareFactory:
     """
-    Factory class for setting up all application middleware.
+    Factory class for setting up all application middleware components.
 
-    Provides centralized configuration and proper ordering of middleware.
+    This factory provides centralized configuration and ensures proper ordering
+    of all middleware components. It handles the complexity of middleware
+    ordering (reverse application order) and provides individual setup methods
+    for different middleware categories.
     """
 
     @staticmethod
     def setup_security_middleware(app: FastAPI) -> None:
         """
-        Setup security-related middleware.
+        Setup security-related middleware for request protection.
 
         Args:
-            app: FastAPI application instance
+            app (FastAPI): FastAPI application instance to configure
+
         """
         logger.info("🔒 Setting up security middleware...")
 
@@ -44,10 +57,10 @@ class MiddlewareFactory:
     @staticmethod
     def setup_cors_middleware(app: FastAPI) -> None:
         """
-        Setup CORS middleware.
+        Setup Cross-Origin Resource Sharing (CORS) middleware.
 
         Args:
-            app: FastAPI application instance
+            app (FastAPI): FastAPI application instance to configure
         """
         logger.info("🌐 Setting up CORS middleware...")
 
@@ -63,10 +76,10 @@ class MiddlewareFactory:
     @staticmethod
     def setup_trusted_host_middleware(app: FastAPI) -> None:
         """
-        Setup trusted host middleware.
+        Setup trusted host middleware for host validation.
 
         Args:
-            app: FastAPI application instance
+            app (FastAPI): FastAPI application instance to configure
         """
         logger.info("🛡️ Setting up trusted host middleware...")
 
@@ -78,10 +91,16 @@ class MiddlewareFactory:
     @staticmethod
     def setup_custom_middleware(app: FastAPI) -> None:
         """
-        Setup custom HTTP middleware.
+        Setup custom HTTP middleware for logging and error handling.
 
         Args:
-            app: FastAPI application instance
+            app (FastAPI): FastAPI application instance to configure
+
+        Side Effects:
+            - Adds error_handling_middleware for global exception handling
+            - Adds logging_middleware for request/response logging
+            - Logs custom middleware setup progress
+
         """
         logger.info("⚙️ Setting up custom middleware...")
 
@@ -95,10 +114,16 @@ class MiddlewareFactory:
     @staticmethod
     def setup_rate_limiting(app: FastAPI) -> None:
         """
-        Setup SlowAPI rate limiting for compatibility.
+        Setup SlowAPI rate limiting for backward compatibility.
 
         Args:
-            app: FastAPI application instance
+            app (FastAPI): FastAPI application instance to configure
+
+        Side Effects:
+            - Creates and attaches Limiter instance to app.state
+            - Adds RateLimitExceeded exception handler
+            - Logs rate limiting setup progress
+
         """
         logger.info("⏱️ Setting up SlowAPI rate limiting...")
 
@@ -114,10 +139,27 @@ class MiddlewareFactory:
     @staticmethod
     def setup_all_middleware(app: FastAPI) -> None:
         """
-        Setup all middleware in the correct order.
+        Setup all middleware components in the correct execution order.
+
+        This method orchestrates the setup of all middleware components,
+        ensuring they are added in the proper order for optimal security
+        and functionality. The order accounts for FastAPI's reverse
+        middleware execution pattern.
 
         Args:
-            app: FastAPI application instance
+            app (FastAPI): FastAPI application instance to configure
+
+        Side Effects:
+            - Calls all individual middleware setup methods
+            - Logs overall middleware setup progress
+            - Ensures proper middleware execution order
+
+        Execution Order (first to last in request processing):
+            1. Custom HTTP Middleware (error handling, logging)
+            2. Security Middleware (rate limiting, attack detection)
+            3. CORS Middleware (cross-origin policy)
+            4. Trusted Host Middleware (host validation)
+            5. SlowAPI Rate Limiting (compatibility layer)
         """
         logger.info("🔧 Setting up all middleware...")
 
@@ -142,12 +184,20 @@ class MiddlewareFactory:
         logger.info("✅ All middleware configured successfully")
 
     @staticmethod
-    def get_middleware_info() -> dict:
+    def get_middleware_info() -> Dict[str, any]:
         """
-        Get information about configured middleware.
+        Get comprehensive information about configured middleware.
+
+        Provides detailed information about the middleware stack configuration,
+        including execution order, security features, and configuration details.
 
         Returns:
-            Dict containing middleware configuration info
+            Dict[str, any]: Comprehensive middleware information containing:
+                - middleware_order (List[str]): Middleware execution order
+                - security_features (List[str]): Security capabilities
+                - cors_origins (List[str]): Allowed CORS origins
+                - trusted_hosts (List[str]): Trusted host whitelist
+                - rate_limiting (str): Rate limiting system description
         """
         return {
             "middleware_order": [

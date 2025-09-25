@@ -1,9 +1,9 @@
 """
-Startup manager for handling service initialization.
+Startup manager for handling service initialization and lifecycle management.
 """
 
 import asyncio
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Union
 
 from ..services.prediction import PneumoniaPredictionService
 from .advanced_rate_limiting import create_advanced_rate_limiter
@@ -21,17 +21,20 @@ class StartupManager:
     error handling and reporting.
     """
 
-    def __init__(self):
-        self.services = {}
-        self.startup_errors = []
-        self.warnings = []
+    def __init__(self) -> None:
+        """Initialize the startup manager with empty service containers."""
+        self.services: Dict[str, Any] = {}
+        self.startup_errors: List[str] = []
+        self.warnings: List[str] = []
 
     async def initialize_prediction_service(self) -> bool:
         """
-        Initialize prediction service with error handling.
+        Initialize prediction service with comprehensive error handling.
 
         Returns:
-            bool: True if successful, False otherwise
+            bool: True if initialization successful, False if failed.
+                Failures are logged and added to startup_errors.
+
         """
         try:
             logger.info("🤖 Initializing prediction service...")
@@ -53,10 +56,14 @@ class StartupManager:
         Initialize rate limiter with fallback to memory storage.
 
         Args:
-            storage_config: Storage configuration dictionary
+            storage_config (Dict[str, Any]): Storage configuration dictionary
+                containing backend-specific settings like connection parameters,
+                max_size, timeout settings, etc.
 
         Returns:
-            bool: True if successful, False otherwise
+            bool: True if initialization successful (including fallback),
+                False only if both primary and fallback initialization fail.
+
         """
         try:
             logger.info("🛡️ Initializing rate limiter...")
@@ -109,12 +116,16 @@ class StartupManager:
                 self.startup_errors.append(error_msg)
                 return False
 
-    async def run_health_checks(self) -> Dict[str, bool]:
+    async def run_health_checks(self) -> Dict[str, Any]:
         """
         Run health checks on initialized services.
 
         Returns:
-            Dict[str, bool]: Health status for each service
+            Dict[str, Any]: Health status report containing:
+                - healthy (bool): Overall health status
+                - services (Dict): Individual service health details
+                - prediction: Model loading and availability status
+                - rate_limiter: Storage connectivity and functionality
         """
         health_status = {}
 
@@ -154,10 +165,19 @@ class StartupManager:
         Run all startup tasks with concurrent initialization.
 
         Args:
-            storage_config: Storage configuration dictionary
+            storage_config (Dict[str, Any]): Storage configuration dictionary
+                containing backend-specific settings for rate limiter storage,
+                connection parameters, timeouts, etc.
 
         Returns:
-            Dict containing services, errors, warnings, and health status
+            Dict[str, Any]: Comprehensive startup report containing:
+                - services (Dict[str, Any]): Dictionary of initialized services
+                - errors (List[str]): List of error messages from failed initializations
+                - warnings (List[str]): List of warning messages from fallback scenarios
+                - success_count (int): Number of successfully initialized services
+                - total_services (int): Total number of services attempted
+                - health_status (Dict[str, Any]): Results from post-startup health checks
+
         """
         logger.info("🚀 Starting application services...")
 
