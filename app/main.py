@@ -166,7 +166,7 @@ def _setup_exception_handlers(app: FastAPI) -> None:
     """Setup global exception handlers for the application."""
 
     @app.exception_handler(413)
-    async def request_entity_too_large_handler():
+    async def request_entity_too_large_handler(request, exc):
         """Handle file too large errors."""
         return JSONResponse(
             status_code=413,
@@ -180,7 +180,7 @@ def _setup_exception_handlers(app: FastAPI) -> None:
         )
 
     @app.exception_handler(429)
-    async def rate_limit_handler(request):
+    async def rate_limit_handler(request, exc):
         """Handle rate limit exceeded errors with proper CORS headers."""
         return JSONResponse(
             status_code=429,
@@ -201,7 +201,7 @@ def _setup_exception_handlers(app: FastAPI) -> None:
         )
 
     @app.exception_handler(404)
-    async def not_found_handler():
+    async def not_found_handler(request, exc):
         """Handle 404 errors with custom message."""
         return JSONResponse(
             status_code=404,
