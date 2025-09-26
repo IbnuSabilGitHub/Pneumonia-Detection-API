@@ -22,7 +22,7 @@ except ImportError:
     app = FastAPI(
         title="Pneumonia Detection API",
         description="API for pneumonia detection from chest X-ray images",
-        version="3.3.0",
+        version="3.4.2",
     )
 
     @app.get("/")
@@ -31,7 +31,7 @@ except ImportError:
         return {
             "message": "Pneumonia Detection API is running",
             "status": "healthy",
-            "version": "3.1.0",
+            "version": "3.4.2",
             "note": "Fallback mode - Please check if all dependencies are installed correctly",
         }
 

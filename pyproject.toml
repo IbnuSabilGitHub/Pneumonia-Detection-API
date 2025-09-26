@@ -1,6 +1,11 @@
 # FastAPI CLI configuration
 # This file tells FastAPI CLI how to run the application
 
+[project]
+name = "pneumonia-detection-api"
+version = "3.4.2"
+description = "AI-powered pneumonia detection API from chest X-ray images"
+
 [tool.fastapi-cli]
 app = "main:app"
 host = "127.0.0.1"

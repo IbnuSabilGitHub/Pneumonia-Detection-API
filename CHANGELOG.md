@@ -1,6 +1,97 @@
 # Changelog
 
-## [3.4.2] - 2025-09-06 - Comprehensive API Documentation Enhancement
+## [3.4.2] - 2025-09-25 - Comprehensive Architecture Refactoring & Modularization
+
+### 🔥Breaking Changes
+- **RESTRUCTURED**: Endpoint response format for `POST /pneumonia/predict`:
+  - Fields `model_type` and `model_version` moved to new `model_info` object with `architecture`
+  - Legacy consumers parsing root-level fields need updates
+- **REPLACED**: Security endpoints restructured:
+  - Old unified endpoint replaced with separate endpoints:
+    - `GET /security/status` (status & posture)
+    - `GET /security/stats` (metrics & aggregation)
+- **REMOVED**: Unified Pydantic models in `schemas.py` replaced with modular domain-specific schemas:
+  - `prediction_schemas.py`, `health_schemas.py`, `security_schemas.py`, etc.
+- **STANDARDIZED**: Error handling format with consistent fields:
+  - `error_code`, `message`, `timestamp`, and context-specific attributes (e.g., `retry_after`, `file_hash`)
+- **DISABLED**: Redis integration by default (code commented out for manual activation if needed)
+
+### ✨ Added
+- **MODULARIZED**: Complete architecture overhaul:
+  - Rate limiting system (`app/core/rate_limiting/*`)
+  - Dependency injection container (`AppDependencies`)
+  - Startup manager (`StartupManager`)
+  - OpenAPI documentation builder per endpoint (`app/docs/sections/*`, `app/openapi.py`)
+  - Middleware factory with standardized execution order
+- **ENHANCED**: Advanced security features:
+  - Adaptive attack detection with global threat scoring
+  - Fingerprint blocking system
+  - Unique IP metrics and behavioral analysis
+- **IMPLEMENTED**: Duplicate file detection & in-memory eviction:
+  - SHA256 hashing to prevent repeated uploads
+  - Memory-efficient cache management
+- **RESTRUCTURED**: Prediction response with new `model_info` structure:
+  - Contains `type`, `version`, and `architecture` information
+- **ADDED**: Development workflow improvements:
+  - `.pre-commit-config.yaml` with Black + isort configuration
+  - `LADING_PAGE_TEMPLATE.md` for landing page setup
+- **INTRODUCED**: `ErrorCode` enum for consistent error handling
+- **FIXED**: CORS headers now included in error responses (429, 404, 413) for better browser/Swagger UI compatibility
+- **EXPANDED**: Comprehensive internal documentation (refactor guides & architecture docs)
+
+### 🔧 Changed
+- **RELAXED**: Default rate limits for better usability:
+  - IP limit: increased to 50 requests
+  - Fingerprint limit: increased to 10 requests
+  - Attack threshold: adjusted to 0.9
+- **MODERNIZED**: Application startup using lifecycle context (`lifespan`) with coordinated service initialization
+- **ENHANCED**: Structured logging with rich contextual information
+- **IMPROVED**: Modular file organization for better maintainability
+- **ENRICHED**: Security response data with threat scoring and blocked fingerprint information
+- **STANDARDIZED**: Timestamp format to ISO 8601 across all responses
+
+### 🗑️ Removed / Deprecated
+- **REMOVED**: `app/models/schemas.py` (replaced with modular schemas)
+- **DEPRECATED**: Monolithic rate limiter implementation
+- **REPLACED**: Legacy unified security endpoint
+- **TEMPORARILY DISABLED**: Active Redis integration (commented out, can be re-enabled)
+
+### 🩹 Fixed
+- **RESOLVED**: Inconsistent CORS headers in error responses
+- **PREVENTED**: Memory leaks from unmanaged duplicate file hash storage
+- **IMPROVED**: Model readiness checking with explicit `is_loaded` validation
+- **ENHANCED**: Edge case handling throughout the application
+
+### 🚀 Performance
+- **OPTIMIZED**: Modular structure enables selective performance tuning
+- **REDUCED**: Duplicate upload processing overhead through intelligent caching
+- **IMPROVED**: Container and factory pattern implementation for better resource management
+
+### �️ Security
+- **ADVANCED**: Adaptive attack scoring with fingerprint-based blocking
+- **ENHANCED**: Security transparency through separate status and statistics endpoints
+- **REDUCED**: Default attack surface by disabling external dependencies (Redis)
+- **STRENGTHENED**: Request analysis and threat detection capabilities
+
+### � Documentation
+- **COMPREHENSIVE**: Production-ready README with security and deployment focus
+- **CLEAN**: OpenAPI metadata through dedicated builder system
+- **PREPARED**: Landing page template for marketing/presentation needs
+- **IMPROVED**: File structure and naming for better developer experience
+
+### ⚙️ Configuration
+**New/Changed Environment Variables** (see `settings.py` for full details):
+- `RATE_LIMIT_MAX_REQUESTS_PER_IP`: Maximum requests per IP address
+- `RATE_LIMIT_MAX_FINGERPRINT_REQUESTS`: Maximum requests per fingerprint
+- `ATTACK_THRESHOLD`: Global attack score threshold
+- `EXCLUDED_PATHS`: Paths to exclude from rate limiting
+- `FINGERPRINT_BLOCK_DURATION_SECONDS`: Duration for fingerprint blocking
+
+**Note**: Adjust your environment configuration to maintain compatibility with previous release behavior if needed.
+
+---
+
+## [3.4.1] - 2025-09-06 - Comprehensive API Documentation Enhancement
 
 ### 📚 Documentation Overhaul
 - **ENHANCED**: Complete API documentation for all endpoints (/docs and /redoc)
@@ -39,12 +130,6 @@
 - **FIXED**: OpenAPI schema configuration for better documentation rendering
 - **RESOLVED**: ReDoc duplicate endpoint issues by removing redundant decorators
 - **IMPROVED**: FastAPI application metadata and contact information
-
----
-
-## [3.4.1] - 2025-09-01 - Documentation Infrastructure Setup
-- **PREPARED**: Documentation framework for comprehensive API documentation
-- **INITIALIZED**: Documentation file structure and templates
 
 ---
 

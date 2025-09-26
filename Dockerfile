@@ -1,4 +1,4 @@
-# Multi-stage build for Pneumonia Detection API v3.3.0
+# Multi-stage build for Pneumonia Detection API v3.4.2
 FROM python:3.11-slim AS builder
 
 WORKDIR /app
@@ -14,7 +14,7 @@ FROM python:3.11-slim
 ENV PATH="/opt/venv/bin:$PATH" \
     PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
-    APP_VERSION=3.2.0 \
+    APP_VERSION=3.4.2 \
     STORAGE_BACKEND=memory
 
 WORKDIR /app
