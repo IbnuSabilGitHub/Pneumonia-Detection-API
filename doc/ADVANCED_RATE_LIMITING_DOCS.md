@@ -174,14 +174,14 @@ sequenceDiagram
 ```python
 # Rate Limiting Configuration
 WINDOW_SIZE = 60  # 1 minute
-MAX_REQUESTS_PER_IP = 5
-MAX_FINGERPRINT_REQUESTS = 2  # Strict fingerprint limit
+MAX_REQUESTS_PER_IP = 10
+MAX_FINGERPRINT_REQUESTS = 3  # Strict fingerprint limit
 SUSPICIOUS_IP_CHANGES_THRESHOLD = 5  # IPs in short time
 ATTACK_BLOCK_DURATION = 300  # 5 minutes
 
 # Attack Detection Thresholds
 IP_SWITCHING_THRESHOLD = 3  # Same fingerprint from 3+ IPs
-GLOBAL_ATTACK_THRESHOLD = 0.6  # Attack score threshold
+GLOBAL_ATTACK_THRESHOLD = 0.8  # Attack score threshold
 BOT_BEHAVIOR_VARIANCE = 0.1  # Request timing variance
 ```
 

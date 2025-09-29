@@ -1,32 +1,7 @@
 version: '3.8'
 
 services:
-  # Redis for advanced rate limiting
-  redis:
-    image: redis:7-alpine
-    container_name: pneumonia-api-redis
-    restart: unless-stopped
-    ports:
-      - "6379:6379"
-    environment:
-      REDIS_PASSWORD: ${REDIS_PASSWORD:-pneumonia_redis_dev}
-    command: redis-server --requirepass ${REDIS_PASSWORD:-pneumonia_redis_dev}
-    volumes:
-      - redis_data:/data
-    networks:
-      - pneumonia-network
-    healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-    deploy:
-      resources:
-        limits:
-          cpus: "0.5"      # ~0.5 vCPU
-          memory: 128M     # Redis tidak perlu besar
-
-  # Main API application
+  # Main API application - IN-MEMORY ONLY
   pneumonia-api:
     build:
       context: .
@@ -36,18 +11,54 @@ services:
     ports:
       - "8000:8000"
     environment:
-      APP_VERSION: "3.1.0"
+      APP_VERSION: "3.4.2"
       DEBUG: "false"
-      STORAGE_BACKEND: "redis"
-      REDIS_URL: "redis://:${REDIS_PASSWORD:-pneumonia_redis_dev}@redis:6379/0"
+      # FORCE IN-MEMORY STORAGE
+      STORAGE_BACKEND: "memory"
+      # REMOVE REDIS_URL to prevent Redis connection attempts
+      # REDIS_URL: ""  # Commented out completely
+      
+      # PRODUCTION CONFIGURATION - FREE TIER OPTIMIZED
       ADVANCED_RATE_LIMITING_ENABLED: "true"
-      MAX_REQUESTS_PER_IP: "10"
-      MAX_FINGERPRINT_REQUESTS: "3"
-      TRUSTED_HOSTS: "localhost,127.0.0.1,0.0.0.0"
+      MAX_REQUESTS_PER_IP: "100"
+      MAX_FINGERPRINT_REQUESTS: "50"
+      RATE_LIMIT_WINDOW_SIZE: "300"
+      IP_SWITCHING_THRESHOLD: "5"
+      SUSPICIOUS_IP_CHANGES_THRESHOLD: "10"
+      GLOBAL_ATTACK_THRESHOLD: "0.7"
+      BOT_BEHAVIOR_VARIANCE: "0.1"
+      ATTACK_BLOCK_DURATION: "300"
+      FINGERPRINT_BLOCK_DURATION: "600"
+      IP_SWITCHING_DETECTION_WINDOW: "300"
+      BEHAVIORAL_ANALYSIS_WINDOW: "600"
+      GLOBAL_ATTACK_SCORE_WINDOW: "900"
+      COORDINATED_ATTACK_THRESHOLD: "3"
+      BOT_TIMING_THRESHOLD: "2.0"
+      MAX_RECENT_IPS: "1000"
+      MAX_REQUEST_PATTERNS_PER_IP: "50"
+      MAX_FILE_HASH_REQUESTS: "500"
+      MAX_GLOBAL_REQUEST_RATE: "500"
+      MAX_FINGERPRINTS_PER_IP: "10"
+      ATTACK_REDUCTION_FACTOR: "0.5"
+      PREDICTION_CONCURRENCY_LIMIT: "3"
+      PREDICTION_MAX_REQUESTS_PER_IP: "18"
+      PREDICTION_RATE_WINDOW: "300"
+      
+      
+      # IN-MEMORY STORAGE CONFIGURATION - FREE TIER OPTIMIZED
+      MEMORY_MAX_SIZE: "1000"
+      MEMORY_CLEANUP_INTERVAL: "180"
+      MEMORY_DEFAULT_TTL: "1800"
+      
+      # List fields as comma-separated strings
+      TRUSTED_HOSTS: "localhost,127.0.0.1,0.0.0.0,*.railway.app"
       CORS_ORIGINS: "*"
-    depends_on:
-      redis:
-        condition: service_healthy
+      EXCLUDED_PATHS: "/health,/,/docs,/redoc,/openapi.json"
+      ALLOWED_EXTENSIONS: ".jpg,.jpeg,.png"
+    # REMOVE DEPENDENCY ON REDIS
+    # depends_on:
+    #   redis:
+    #     condition: service_healthy
     networks:
       - pneumonia-network
     volumes:
@@ -86,9 +97,10 @@ services:
           cpus: "0.2"
           memory: 64M
 
-volumes:
-  redis_data:
-    driver: local
+# FIXED: Remove volumes section completely since we don't need any named volumes
+# volumes:
+#   redis_data:
+#     driver: local
 
 networks:
   pneumonia-network:
