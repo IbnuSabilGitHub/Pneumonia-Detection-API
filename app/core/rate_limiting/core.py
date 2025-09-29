@@ -47,19 +47,21 @@ class AdvancedRateLimiter:
         self.fingerprint_manager: Optional[FingerprintManager] = None
         self.rate_limit_manager: Optional[RateLimitManager] = None
 
-        # Configuration from centralized settings
+        # Configuration from centralized settings with updated production fallbacks
         self.max_requests_per_ip = self.rate_limiting_config.get(
-            "max_requests_per_ip", 10
+            "max_requests_per_ip", 100  # Updated for production
         )
         self.max_fingerprint_requests = self.rate_limiting_config.get(
-            "max_fingerprint_requests", 3
+            "max_fingerprint_requests", 50  # Updated for production
         )
-        self.window_size = self.rate_limiting_config.get("window_size", 60)
+        self.window_size = self.rate_limiting_config.get(
+            "window_size", 300
+        )  # Updated to 5 minutes
         self.attack_block_duration = self.rate_limiting_config.get(
             "attack_block_duration", 300
         )
         self.global_attack_threshold = self.rate_limiting_config.get(
-            "global_attack_threshold", 0.8
+            "global_attack_threshold", 0.7  # Updated for production
         )
 
         # Storage initialization flag
@@ -191,13 +193,17 @@ class AdvancedRateLimiter:
         if await self.attack_detector.detect_ip_switching_attack_async(
             client_ip, fingerprint
         ):
+            attack_type = (
+                getattr(self.attack_detector, "last_attack_type", "ip_switching")
+                or "ip_switching"
+            )
             await self.fingerprint_manager.block_fingerprint(
                 fingerprint, self.attack_block_duration
             )
             return (
                 False,
-                "IP switching attack detected",
-                {"fingerprint": fingerprint, "attack_type": "ip_switching"},
+                f"{attack_type.replace('_', ' ').title()} attack detected",
+                {"fingerprint": fingerprint, "attack_type": attack_type},
             )
 
         # Layer 5: Behavioral anomaly detection

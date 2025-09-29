@@ -54,6 +54,10 @@ class AttackDetector:
         self.file_hash_requests: Dict[str, List[tuple]] = defaultdict(list)
         self.global_request_rate: deque = deque(maxlen=max_global_request_rate)
         self.attack_score: float = 0.0
+        self.last_attack_type: Optional[str] = None
+        self._fingerprint_ip_activity: Dict[str, deque] = defaultdict(
+            lambda: deque(maxlen=max_recent_ips)
+        )
 
     async def _get_storage_list(self, key: str) -> List[Any]:
         """Get list from storage."""
@@ -102,34 +106,45 @@ class AttackDetector:
         # Track recent IPs
         self.recent_ips.append((client_ip, current_time))
 
+        # Track fingerprint specific IP activity (improves accuracy over previous simplified logic)
+        fp_deque = self._fingerprint_ip_activity[fingerprint]
+        fp_deque.append((client_ip, current_time))
+
         # Clean old entries
         cutoff_time = current_time - self.ip_switching_detection_window
         while self.recent_ips and self.recent_ips[0][1] < cutoff_time:
             self.recent_ips.popleft()
+        # Clean per-fingerprint deque
+        while fp_deque and fp_deque[0][1] < cutoff_time:
+            fp_deque.popleft()
 
         # Count unique IPs in recent time
         recent_unique_ips = len(set(ip for ip, _ in self.recent_ips))
 
-        # Detect rapid IP changes with same fingerprint
-        fingerprint_ips = [
-            ip
-            for ip, ts in self.recent_ips
-            # Simplified check for now
-        ]
-
-        if len(set(fingerprint_ips)) > self.ip_switching_threshold:
+        # Detect rapid IP switching for the SAME fingerprint (accurate, unlike earlier global count)
+        fingerprint_unique_ips = len(set(ip for ip, _ in fp_deque))
+        if fingerprint_unique_ips > self.ip_switching_threshold:
+            self.last_attack_type = "ip_switching"
             logger.warning(
-                f"🚨 IP switching attack detected: fingerprint {fingerprint} from {len(set(fingerprint_ips))} IPs"
+                "🚨 IP switching attack detected: fingerprint %s from %d IPs in %ds window",
+                fingerprint,
+                fingerprint_unique_ips,
+                self.ip_switching_detection_window,
             )
             return True
 
         # Detect if too many unique IPs in short time (distributed attack)
         if recent_unique_ips > self.suspicious_ip_changes_threshold:
+            self.last_attack_type = "distributed"
             logger.warning(
-                f"🚨 Distributed attack detected: {recent_unique_ips} unique IPs in 5 minutes"
+                "🚨 Distributed attack detected: %d unique IPs in %ds window",
+                recent_unique_ips,
+                self.ip_switching_detection_window,
             )
             return True
 
+        # Reset last attack type if no detection
+        self.last_attack_type = None
         return False
 
     async def detect_ip_switching_attack_async(
@@ -165,19 +180,27 @@ class AttackDetector:
 
         # Detect rapid IP changes with same fingerprint
         if len(fingerprint_ips) > self.ip_switching_threshold:
+            self.last_attack_type = "ip_switching"
             logger.warning(
-                f"🚨 IP switching attack detected: fingerprint {fingerprint} from {len(fingerprint_ips)} IPs"
+                "🚨 IP switching attack detected: fingerprint %s from %d IPs in %ds window",
+                fingerprint,
+                len(fingerprint_ips),
+                self.ip_switching_detection_window,
             )
             return True
 
         # Count total unique IPs in recent time
         unique_ips = set(activity.get("ip") for activity in recent_activities)
         if len(unique_ips) > self.suspicious_ip_changes_threshold:
+            self.last_attack_type = "distributed"
             logger.warning(
-                f"🚨 Distributed attack detected: {len(unique_ips)} unique IPs in 5 minutes"
+                "🚨 Distributed attack detected: %d unique IPs in %ds window",
+                len(unique_ips),
+                self.ip_switching_detection_window,
             )
             return True
 
+        self.last_attack_type = None
         return False
 
     def detect_behavioral_anomalies(

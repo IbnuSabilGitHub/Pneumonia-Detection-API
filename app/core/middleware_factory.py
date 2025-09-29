@@ -115,6 +115,7 @@ class MiddlewareFactory:
     def setup_rate_limiting(app: FastAPI) -> None:
         """
         Setup SlowAPI rate limiting for backward compatibility.
+        DISABLED: Using Advanced Rate Limiting instead.
 
         Args:
             app (FastAPI): FastAPI application instance to configure
@@ -125,16 +126,17 @@ class MiddlewareFactory:
             - Logs rate limiting setup progress
 
         """
-        logger.info("⏱️ Setting up SlowAPI rate limiting...")
+        logger.info("⏱️ SlowAPI rate limiting disabled - using Advanced Rate Limiting")
 
+        # DISABLED: SlowAPI rate limiting - using Advanced Rate Limiting instead
         # Create limiter instance
-        limiter = Limiter(key_func=get_remote_address)
-        app.state.limiter = limiter
+        # limiter = Limiter(key_func=get_remote_address)
+        # app.state.limiter = limiter
 
         # Add exception handler for rate limit exceeded
-        app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+        # app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
-        logger.debug("✅ SlowAPI rate limiting configured")
+        logger.debug("✅ Advanced rate limiting will be used instead of SlowAPI")
 
     @staticmethod
     def setup_all_middleware(app: FastAPI) -> None:

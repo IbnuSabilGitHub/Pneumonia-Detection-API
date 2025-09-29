@@ -2,6 +2,7 @@
 Custom middleware for security and logging with in-memory storage support.
 """
 
+import os
 import time
 
 from fastapi import HTTPException, Request, status
@@ -30,10 +31,27 @@ class SecurityMiddleware(BaseHTTPMiddleware):
     def __init__(self, app):
         super().__init__(app)
         self.logger = get_logger(__name__)
+        # Allow enabling extra diagnostic headers without changing code
+        self.enable_debug_headers = os.getenv(
+            "RATE_LIMIT_DEBUG_HEADERS", "false"
+        ).lower() in ("1", "true", "yes")
+        # Trust proxy chain? (X-Forwarded-For first hop vs last)
+        self.trust_proxy = os.getenv("TRUST_PROXY", "true").lower() in (
+            "1",
+            "true",
+            "yes",
+        )
 
     async def dispatch(self, request, call_next):
         start_time = time.time()
         client_ip = get_client_ip(request)
+        # If multiple IPs in X-Forwarded-For and trust_proxy disabled, take last (direct peer) for stricter behavior
+        xff = request.headers.get("x-forwarded-for")
+        if xff and not self.trust_proxy:
+            try:
+                client_ip = xff.split(',')[-1].strip()
+            except Exception:
+                pass
         endpoint = f"{request.method} {request.url.path}"
 
         # Skip rate limiting for excluded endpoints
@@ -68,6 +86,27 @@ class SecurityMiddleware(BaseHTTPMiddleware):
             response.headers["X-Content-Type-Options"] = "nosniff"
             response.headers["X-Frame-Options"] = "DENY"
             response.headers["X-XSS-Protection"] = "1; mode=block"
+
+            # Add rate limiting headers for successful requests
+            await self._add_rate_limit_headers(response, client_ip, request)
+
+            # Optional debug headers (never enable in public prod by default)
+            if self.enable_debug_headers:
+                try:
+                    from ..core.advanced_rate_limiting import get_rate_limiter
+
+                    rl = get_rate_limiter()
+                    if rl and rl.attack_detector:
+                        response.headers["X-Attack-Score"] = str(
+                            round(rl.attack_detector.attack_score, 3)
+                        )
+                        atk_type = (
+                            getattr(rl.attack_detector, "last_attack_type", "")
+                            or "none"
+                        )
+                        response.headers["X-Last-Attack-Type"] = atk_type
+                except Exception:
+                    pass
 
             return response
 
@@ -127,6 +166,10 @@ class SecurityMiddleware(BaseHTTPMiddleware):
                 self.logger.debug("Using fallback rate limiting")
                 is_allowed, reason, details = True, "Fallback mode", {}
 
+            # Ensure details is always a dictionary
+            if not isinstance(details, dict):
+                details = {"original_details": details}
+
             return {"allowed": is_allowed, "reason": reason, "details": details}
 
         except Exception as e:
@@ -160,6 +203,37 @@ class SecurityMiddleware(BaseHTTPMiddleware):
             "details": details,
         }
 
+        # Extract rate limiting information from details (handle different formats)
+        if isinstance(details, dict):
+            # Handle nested dictionary format
+            if "ip" in details and isinstance(details["ip"], dict):
+                ip_count = details["ip"].get("requests_in_window", 0)
+            else:
+                ip_count = details.get("requests_in_window", 0)
+
+            fingerprint_count = details.get("fingerprint_count", 0)
+            max_requests = details.get("max_requests_per_ip", 100)
+            max_fingerprint = details.get("max_fingerprint_requests", 50)
+            window_size = details.get("window_size", 300)
+        else:
+            # Fallback for non-dictionary details
+            ip_count = 0
+            fingerprint_count = 0
+            max_requests = 100
+            max_fingerprint = 50
+            window_size = 300
+
+        # Determine which limit was exceeded
+        if "IP rate limit" in reason:
+            remaining = max(0, max_requests - ip_count)
+            limit_info = f"{max_requests} per {window_size}s"
+        elif "Fingerprint" in reason:
+            remaining = max(0, max_fingerprint - fingerprint_count)
+            limit_info = f"{max_fingerprint} per {window_size}s"
+        else:
+            remaining = 0
+            limit_info = f"{max_requests} per {window_size}s"
+
         # Include proper CORS headers to prevent "Failed to fetch" in Swagger UI
         cors_headers = {
             "Access-Control-Allow-Origin": "*",
@@ -167,10 +241,11 @@ class SecurityMiddleware(BaseHTTPMiddleware):
             "Access-Control-Allow-Headers": "*",
             "Access-Control-Allow-Credentials": "true",
             "Content-Type": "application/json",
-            "Retry-After": "60",
-            "X-RateLimit-Limit": str(details.get("rate_limit", "unknown")),
-            "X-RateLimit-Remaining": "0",
-            "X-RateLimit-Reset": str(int(time.time() + 60)),
+            "Retry-After": str(window_size),
+            "X-RateLimit-Limit": limit_info,
+            "X-RateLimit-Remaining": str(remaining),
+            "X-RateLimit-Reset": str(int(time.time() + window_size)),
+            "X-RateLimit-Window": str(window_size),
         }
 
         return JSONResponse(
@@ -178,6 +253,70 @@ class SecurityMiddleware(BaseHTTPMiddleware):
             content=error_detail,
             headers=cors_headers,
         )
+
+    async def _add_rate_limit_headers(self, response, client_ip: str, request) -> None:
+        """Add rate limiting headers to successful responses."""
+        try:
+            # Import at runtime to get the latest reference
+            from ..core.advanced_rate_limiting import get_rate_limiter
+
+            advanced_rate_limiter = get_rate_limiter()
+
+            if advanced_rate_limiter is None:
+                return
+
+            # Get rate limiting configuration
+            config = advanced_rate_limiter.rate_limiting_config
+            max_requests = config.get("max_requests_per_ip", 100)
+            max_fingerprint = config.get("max_fingerprint_requests", 50)
+            window_size = config.get("window_size", 300)
+
+            # Get current usage if possible
+            if (
+                hasattr(advanced_rate_limiter, "rate_limit_manager")
+                and advanced_rate_limiter.rate_limit_manager
+            ):
+                try:
+                    ip_count = await advanced_rate_limiter.rate_limit_manager.get_ip_request_count(
+                        client_ip
+                    )
+                    fingerprint = advanced_rate_limiter.fingerprint_manager.create_request_fingerprint(
+                        request
+                    )
+                    fingerprint_count = await advanced_rate_limiter.rate_limit_manager.get_fingerprint_request_count(
+                        fingerprint
+                    )
+
+                    # Use the more restrictive limit
+                    ip_remaining = max(0, max_requests - ip_count)
+                    fp_remaining = max(0, max_fingerprint - fingerprint_count)
+                    remaining = min(ip_remaining, fp_remaining)
+
+                    response.headers[
+                        "X-RateLimit-Limit"
+                    ] = f"{max_requests} per {window_size}s"
+                    response.headers["X-RateLimit-Remaining"] = str(remaining)
+                    response.headers["X-RateLimit-Reset"] = str(
+                        int(time.time() + window_size)
+                    )
+                    response.headers["X-RateLimit-Window"] = str(window_size)
+
+                except Exception as e:
+                    # If we can't get counts, just add basic headers
+                    response.headers[
+                        "X-RateLimit-Limit"
+                    ] = f"{max_requests} per {window_size}s"
+                    response.headers["X-RateLimit-Window"] = str(window_size)
+            else:
+                # Fallback headers
+                response.headers[
+                    "X-RateLimit-Limit"
+                ] = f"{max_requests} per {window_size}s"
+                response.headers["X-RateLimit-Window"] = str(window_size)
+
+        except Exception as e:
+            # Don't break the response if header addition fails
+            self.logger.debug(f"Failed to add rate limit headers: {e}")
 
 
 async def logging_middleware(request: Request, call_next):

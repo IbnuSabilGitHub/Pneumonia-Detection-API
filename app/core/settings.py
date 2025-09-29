@@ -2,13 +2,17 @@
 Application configuration and settings.
 """
 
+import logging
+import os
+from typing import List, Optional, Union
+
+logger = logging.getLogger(__name__)
+
 try:
     from pydantic_settings import BaseSettings
 except ImportError:
     # Fallback for older pydantic versions
     from pydantic import BaseSettings
-
-from typing import List, Optional
 
 
 class Settings(BaseSettings):
@@ -23,13 +27,13 @@ class Settings(BaseSettings):
     host: str = "0.0.0.0"
     port: int = 8000
 
-    # Security
-    trusted_hosts: List[str] = ["*.railway.app", "localhost", "127.0.0.1"]
-    cors_origins: List[str] = ["*"]  # Configure based on your frontend
+    # Security - Allow both string and list for Docker env vars
+    trusted_hosts: Union[List[str], str] = ["*.railway.app", "localhost", "127.0.0.1"]
+    cors_origins: Union[List[str], str] = ["*"]  # Configure based on your frontend
 
     # File Upload
     max_file_size: int = 10 * 1024 * 1024  # 10 MB
-    allowed_extensions: List[str] = [".jpg", ".jpeg", ".png"]
+    allowed_extensions: Union[List[str], str] = [".jpg", ".jpeg", ".png"]
 
     # Model
     model_path: str = "models/pneumonia_model_standard.onnx"
@@ -39,43 +43,49 @@ class Settings(BaseSettings):
     model_stats_path_efficientnet_b0: str = "models/model_stats_efficientnet_b0.json"
 
     # Advanced Rate Limiting - Main Settings
-    advanced_rate_limiting_enabled: bool = False
+    advanced_rate_limiting_enabled: bool = True
 
     # Rate limiting path to be excluded
-    excluded_paths: List[str] = ["/health", "/", "/docs", "/redoc", "/openapi.json"]
+    excluded_paths: Union[List[str], str] = [
+        "/health",
+        "/",
+        "/docs",
+        "/redoc",
+        "/openapi.json",
+    ]
 
-    # Basic Rate Limiting
-    max_requests_per_ip: int = 50
-    max_fingerprint_requests: int = 10
-    rate_limit_window_size: int = 300  # seconds
+    # Basic Rate Limiting - Standard Production Settings
+    max_requests_per_ip: int = 100  # Reasonable limit for free tier
+    max_fingerprint_requests: int = 50  # Conservative fingerprint limit
+    rate_limit_window_size: int = 300  # 5 minute window
 
-    # Attack Detection Thresholds
-    ip_switching_threshold: int = 10  # Same fingerprint from N+ IPs
-    suspicious_ip_changes_threshold: int = 20  # Distributed attack threshold
-    global_attack_threshold: float = 0.9  # Attack score threshold
-    bot_behavior_variance: float = 0.3  # Request timing variance for bot detection
+    # Attack Detection Thresholds - Production Settings
+    ip_switching_threshold: int = 5  # Same fingerprint from 5+ IPs triggers detection
+    suspicious_ip_changes_threshold: int = 10  # Distributed attack threshold
+    global_attack_threshold: float = 0.7  # Attack score threshold
+    bot_behavior_variance: float = 0.1  # Request timing variance threshold
 
-    # Block Durations
-    attack_block_duration: int = 60  # 5 minutes in seconds
-    fingerprint_block_duration: int = 120  # 5 minutes in seconds
+    # Block Durations - Standard Production Settings
+    attack_block_duration: int = 300  # 5 minutes block duration
+    fingerprint_block_duration: int = 600  # 10 minutes for fingerprint blocks
 
-    # Attack Detection Windows
+    # Attack Detection Windows - Production Settings
     ip_switching_detection_window: int = 300  # 5 minutes
-    behavioral_analysis_window: int = 300  # 5 minutes
-    global_attack_score_window: int = 60  # 1 minute
+    behavioral_analysis_window: int = 600  # 10 minutes
+    global_attack_score_window: int = 900  # 15 minutes
 
-    # Attack Detection Limits
-    coordinated_attack_threshold: int = 8  # Same file from N+ IPs
-    bot_timing_threshold: float = 30.0  # Seconds - avg interval for bot detection
+    # Attack Detection Limits - Production Settings
+    coordinated_attack_threshold: int = 3  # Same file from 3+ IPs triggers detection
+    bot_timing_threshold: float = 2.0  # Minimum 2 seconds between requests
 
-    # In-Memory Limits (for fallback mode)
-    max_recent_ips: int = 1000
-    max_request_patterns_per_ip: int = 10
-    max_file_hash_requests: int = 100
-    max_global_request_rate: int = 1000
-    max_fingerprints_per_ip: int = 100
+    # In-Memory Limits (optimized for free tier memory constraints)
+    max_recent_ips: int = 1000  # Reasonable IP tracking limit
+    max_request_patterns_per_ip: int = 50  # Pattern tracking limit
+    max_file_hash_requests: int = 500  # File hash tracking limit
+    max_global_request_rate: int = 500  # Global rate limit per window
+    max_fingerprints_per_ip: int = 10  # Fingerprint limit per IP
 
-    # Rate Limiting Reduction Factor
+    # Rate Limiting Reduction Factor - Aggressive for production
     attack_reduction_factor: float = 0.5  # Reduce limits by 50% during attacks
 
     # Storage Backend Configuration
@@ -92,23 +102,18 @@ class Settings(BaseSettings):
     redis_cluster_nodes: Optional[str] = None  # JSON string of cluster nodes
     redis_key_prefix: str = "pneumonia_api:rate_limit:"
 
-    # In-Memory Storage Configuration (fallback)
-    memory_max_size: int = 10000
-    memory_cleanup_interval: int = 300
-    memory_default_ttl: int = 3600
+    # In-Memory Storage Configuration (optimized for free tier)
+    memory_max_size: int = 1000  # Reduced for memory efficiency
+    memory_cleanup_interval: int = 180  # More frequent cleanup (3 minutes)
+    memory_default_ttl: int = 1800  # 30 minutes TTL
 
-    # Cache
+    # Cache (optimized for free tier)
     cache_duration: int = 300  # 5 minutes
-    file_hash_cache_max_size: int = (
-        5000  # Maximum number of unique file hashes to retain
-    )
+    file_hash_cache_max_size: int = 200  # Reduced cache size for memory efficiency
 
     # Logging
     log_level: str = "INFO"
     log_format: str = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
-
-    # Redis (optional)
-    redis_url: Optional[str] = None
 
     # Railway specific
     railway_environment: Optional[str] = None
@@ -116,10 +121,47 @@ class Settings(BaseSettings):
     # Legacy/backward compatibility
     allowed_origins: Optional[str] = None
 
+    def _parse_string_to_list(self, value: str, default: List[str]) -> List[str]:
+        """Parse comma-separated string into list."""
+        if isinstance(value, str):
+            return [item.strip() for item in value.split(',') if item.strip()]
+        return default
+
     class Config:
         env_file = ".env"
         case_sensitive = False
         extra = "ignore"  # Ignore extra fields for flexibility
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+
+        # Manual parsing for list fields from environment variables
+        if isinstance(self.trusted_hosts, str):
+            self.trusted_hosts = self._parse_string_to_list(
+                self.trusted_hosts, ["*.railway.app", "localhost", "127.0.0.1"]
+            )
+
+        if isinstance(self.cors_origins, str):
+            self.cors_origins = self._parse_string_to_list(self.cors_origins, ["*"])
+
+        if isinstance(self.excluded_paths, str):
+            self.excluded_paths = self._parse_string_to_list(
+                self.excluded_paths,
+                ["/health", "/", "/docs", "/redoc", "/openapi.json"],
+            )
+
+        if isinstance(self.allowed_extensions, str):
+            self.allowed_extensions = self._parse_string_to_list(
+                self.allowed_extensions, [".jpg", ".jpeg", ".png"]
+            )
+
+        # Debug logging untuk melihat dari mana values dibaca
+        logger.info("🔧 Configuration loaded successfully")
+        logger.info(f"Rate limiting enabled: {self.advanced_rate_limiting_enabled}")
+        logger.info(f"Max requests per IP: {self.max_requests_per_ip}")
+        logger.info(f"Attack block duration: {self.attack_block_duration} seconds")
+        logger.info(f"Trusted hosts: {self.trusted_hosts}")
+        logger.info(f"Storage backend: {self.storage_backend}")
 
     def get_redis_config(self) -> dict:
         """Get Redis configuration dictionary."""
