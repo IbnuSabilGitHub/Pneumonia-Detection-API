@@ -13,22 +13,21 @@ This API is for educational and research purposes only. Predictions must **NEVER
 
 ## 📚 Table of Contents
 
-1. Overview
-2. Key Features
-3. Architecture
-4. Quick Start
-5. API Endpoints
-6. Security & Rate Limiting
-7. Configuration
-8. Deployment
-9. Usage Examples
-10. Monitoring & Alerting
-11. Testing & Quality
-12. Migration: Redis → In-Memory
-13. Performance & Benchmarks
-14. Troubleshooting
-15. References
-16. Changelog (Summary)
+- [🏥 Pneumonia Detection API](#-pneumonia-detection-api)
+  - [⚠️ Medical Disclaimer](#️-medical-disclaimer)
+  - [📚 Table of Contents](#-table-of-contents)
+  - [🌟 Overview](#-overview)
+  - [🚀 Key Features](#-key-features)
+  - [🏗️ Architecture](#️-architecture)
+  - [⚡ Quick Start](#-quick-start)
+  - [📡 API Endpoints](#-api-endpoints)
+  - [🛡️ Security \& Rate Limiting](#️-security--rate-limiting)
+  - [⚙️ Configuration](#️-configuration)
+  - [🌐 Deployment](#-deployment)
+  - [🔧 Usage Examples](#-usage-examples)
+  - [📊 Monitoring \& Alerting](#-monitoring--alerting)
+  - [🔄 Migration: Redis → In-Memory](#-migration-redis--in-memory)
+  - [🔗 References](#-references)
 
 ---
 
@@ -69,31 +68,59 @@ Project structure:
 ```
 pneumonia-detection-api/
 ├── app/
-│   ├── main.py                         # FastAPI application factory
+│   ├── __init__.py
+│   ├── main.py                         # FastAPI application
+│   ├── openapi.py                      # API documentation config
 │   ├── api/                            # API routes
+│   │   ├── __init__.py
 │   │   ├── health.py
+│   │   ├── model_info.py
 │   │   ├── prediction.py
-│   │   └── security.py
-│   ├── services/                       # Business logic
-│   │   └── prediction.py
-│   ├── models/                         # Pydantic schemas
+│   │   ├── stats.py
+│   │   └── status.py
 │   ├── core/                           # Core & infrastructure
-│   │   ├── advanced_rate_limiting.py
+│   │   ├── __init__.py
+│   │   ├── advanced_rate_limiting.py   # Backward compatibility
+│   │   ├── dependencies.py
+│   │   ├── logger.py
 │   │   ├── memory_storage.py
-│   │   ├── redis_storage.py            # Optional
-│   │   ├── storage_factory.py
-│   │   ├── storage_backends.py
+│   │   ├── middleware_factory.py
+│   │   ├── rate_limiting/              # Modular rate limiting
+│   │   ├── redis_storage.py            # Optional Redis backend
 │   │   ├── settings.py
-│   │   └── logger.py
+│   │   ├── startup_manager.py
+│   │   ├── storage_backends.py
+│   │   └── storage_factory.py
+│   ├── docs/                           # Documentation metadata
+│   │   └── sections/
 │   ├── middleware/
+│   │   ├── __init__.py
 │   │   └── security.py
-│   └── utils/
+│   ├── models/                         # Pydantic schemas
+│   │   ├── __init__.py
+│   │   ├── base.py
+│   │   ├── error_codes.py
+│   │   ├── health_schemas.py
+│   │   ├── model_info_schemas.py
+│   │   ├── prediction_schemas.py
+│   │   └── security_schemes.py
+│   ├── services/                       # Business logic
+│   │   ├── __init__.py
+│   │   └── prediction.py
+│   └── utils/                          # Utilities
+│       ├── __init__.py
+│       ├── custom_exceptions.py
 │       ├── exceptions.py
+│       ├── get_prediction_service.py
 │       ├── security.py
 │       └── validation.py
-├── models/                             # ONNX model files
+├── doc/                                # Comprehensive documentation
+├── models/                             # ONNX model files & stats
+├── main.py                             # Entry point
+├── docker-compose.yml
 ├── Dockerfile
 ├── requirements.txt
+├── requirements_dev.txt
 └── README.md
 ```
 
@@ -113,13 +140,20 @@ Clone, install, and run:
 git clone https://github.com/IbnuSabilGitHub/Pneumonia-Detection-API.git
 cd Pneumonia-Detection-API
 
+# Option 1: Local Python environment
 python -m venv .venv
 . .venv/bin/activate  # Linux/Mac
 # .venv\Scripts\activate  # Windows
 
 pip install -r requirements.txt
-
 python main.py  # or: uvicorn app.main:app --reload
+
+# Option 2: Docker Compose (recommended)
+docker-compose up --build pneumonia-api
+
+# Option 3: Docker (manual)
+docker build -t pneumonia-api .
+docker run -p 8000:8000 pneumonia-api
 ```
 
 Base URL
@@ -143,23 +177,27 @@ curl -X POST "http://localhost:8000/pneumonia/predict" \
 
 ## 📡 API Endpoints
 
-Health & Monitoring
-- GET / or GET /health
+**Health & Monitoring**
+- `GET /` or `GET /health`
   - Returns: { status: healthy|partial|unhealthy, model_loaded, version, uptime }
+  - Health check with service status and model availability
 
-Security
-- GET /security/status
-  - Real-time protection status and metrics
-- GET /security/stats
-  - Detailed analytics and interpretation
+**Security Management**
+- `GET /security/status`
+  - Real-time protection status, attack scores, and current metrics
+  - Returns active threats, request rates, blocked fingerprints
+- `GET /security/stats`
+  - Comprehensive security analytics dashboard
+  - Detailed threat analysis, traffic patterns, and protection effectiveness
 
-Pneumonia Detection
-- POST /pneumonia/predict
-  - Params: file (JPG/JPEG/PNG, max 10MB), model=standard|efficientnet_b0
-  - Returns: prediction, confidence, probabilities, recommendation, model info, disclaimer
-- GET /pneumonia/model/info
-  - Params: model=standard|efficientnet_b0
-  - Returns: model metadata (architecture, input shape, performance)
+**Pneumonia Detection (Core Features)**
+- `POST /pneumonia/predict`
+  - Params: `file` (JPG/JPEG/PNG, max 10MB), optional `model=standard|efficientnet_b0`
+  - Returns: prediction, confidence, probabilities, medical recommendation, model info
+  - **Rate limited**: endpoint-specific limits apply (default: 20 requests per 5 minutes per IP)
+- `GET /pneumonia/model/info`
+  - Params: optional `model=standard|efficientnet_b0`
+  - Returns: model metadata (architecture, input shape, performance metrics)
 
 Example Response (Predict):
 ```json
@@ -192,12 +230,15 @@ Why advanced rate limiting?
 - No distributed attack detection
 
 Solution: Multi-layer protection with dynamic scoring
-- Layer 1: Fingerprint block check
-- Layer 2: IP rate limiting
-- Layer 3: Fingerprint rate limiting
-- Layer 4: IP switching detection (same fingerprint across many IPs, distributed bursts)
-- Layer 5: Behavioral analysis (timing variance, duplicate file across IPs)
-- Layer 6: Global attack scoring (request rate, unique IPs, blocked fingerprints) driving stricter temporary limits
+```mermaid
+graph TD
+    A[Layer 1: Fingerprint Block Check]
+    A --> B[Layer 2: IP Rate Limiting]
+    B --> C[Layer 3: Fingerprint Rate Limiting]
+    C --> D[Layer 4: IP Switching Detection]
+    D --> E[Layer 5: Behavioral Anomaly Detection]
+    E --> F[Layer 6: Global Attack Score]
+```
 
 Note: The advanced rate limiting module has been refactored into `app.core.rate_limiting` with a backward-compatible shim at `app.core.advanced_rate_limiting`. See `doc/RATE_LIMITING_REFACTOR.md` for details.
 
@@ -232,47 +273,83 @@ Retry-After: 60
 ## ⚙️ Configuration
 
 Environment Variables (common)
-```
-# App
+```bash
+# App Configuration
 APP_VERSION=3.4.2
 DEBUG=false
+HOST=0.0.0.0
+PORT=8000
 
-# Storage (default: memory)
-STORAGE_BACKEND=memory   # memory | redis
+# Storage Backend (default: memory)
+STORAGE_BACKEND=memory   # Options: memory | redis
 
-# In-Memory Storage
-MEMORY_MAX_SIZE=10000
-MEMORY_CLEANUP_INTERVAL=300
-MEMORY_DEFAULT_TTL=3600
+# Basic Rate Limiting (production defaults)
+MAX_REQUESTS_PER_IP=100                 # Per 5-minute window
+MAX_FINGERPRINT_REQUESTS=50             # Per fingerprint per window
+RATE_LIMIT_WINDOW_SIZE=300              # 5 minutes
 
-# Rate Limiting
-RATE_LIMIT_REQUESTS=5
-RATE_LIMIT_WINDOW=60
-RATE_LIMIT_BLOCK_DURATION=300
-
-# Advanced Protection
+# Advanced Rate Limiting
 ADVANCED_RATE_LIMITING_ENABLED=true
-MAX_FINGERPRINT_REQUESTS=2
-ATTACK_SCORE_THRESHOLD=0.6
-IP_SWITCH_THRESHOLD=3
+IP_SWITCHING_THRESHOLD=5                # Same fingerprint from N+ IPs
+SUSPICIOUS_IP_CHANGES_THRESHOLD=10      # Distributed attack threshold
+GLOBAL_ATTACK_THRESHOLD="0.7"          # Attack score (0.0-1.0)
 
-# Redis (optional / production)
+# Block Durations (seconds)
+ATTACK_BLOCK_DURATION=300               # 5 minutes
+FINGERPRINT_BLOCK_DURATION=600          # 10 minutes
+
+# Detection Windows (seconds)
+IP_SWITCHING_DETECTION_WINDOW=300       # 5 minutes
+BEHAVIORAL_ANALYSIS_WINDOW=600          # 10 minutes
+GLOBAL_ATTACK_SCORE_WINDOW=900          # 15 minutes
+
+# Endpoint-Specific Limits (for /predict)
+PREDICTION_CONCURRENCY_LIMIT=4          # Max concurrent inferences
+PREDICTION_MAX_REQUESTS_PER_IP=20       # Per endpoint per window
+PREDICTION_RATE_WINDOW=300              # Window for endpoint quota
+
+# In-Memory Storage (when STORAGE_BACKEND=memory)
+MEMORY_MAX_SIZE=1000
+MEMORY_CLEANUP_INTERVAL=180             # 3 minutes
+MEMORY_DEFAULT_TTL=1800                 # 30 minutes
+
+# Redis Configuration (when STORAGE_BACKEND=redis)
 REDIS_URL=redis://localhost:6379
-REDIS_PASSWORD=your_secure_password
+REDIS_HOST=localhost
+REDIS_PORT=6379
+REDIS_PASSWORD=your_secure_password     # Optional
 REDIS_DB=0
-REDIS_MAX_CONNECTIONS=20
+REDIS_MAX_CONNECTIONS=50
 
-# CORS / Hosts
-TRUSTED_HOSTS=*.railway.app,localhost,127.0.0.1
-CORS_ORIGINS=*
+# Security & CORS
+TRUSTED_HOSTS="*.railway.app,localhost,127.0.0.1"
+CORS_ORIGINS="*"
+EXCLUDED_PATHS="/health,/,/docs,/redoc,/openapi.json"
+
+# File Upload
+MAX_FILE_SIZE=10485760                  # 10MB in bytes
+ALLOWED_EXTENSIONS=".jpg,.jpeg,.png"
+CACHE_DURATION=300                      # File hash cache (5 minutes)
 ```
 
-High-Security preset
+High-Security preset (strict limits):
+```bash
+MAX_REQUESTS_PER_IP=30                  # Reduced from 100
+MAX_FINGERPRINT_REQUESTS=20             # Reduced from 50
+IP_SWITCHING_THRESHOLD=3                # Reduced from 5
+GLOBAL_ATTACK_THRESHOLD="0.5"          # Reduced from 0.7
+PREDICTION_MAX_REQUESTS_PER_IP=10       # Reduced from 20
+ATTACK_BLOCK_DURATION=600               # 10 minutes instead of 5
 ```
-RATE_LIMIT_REQUESTS=3
-MAX_FINGERPRINT_REQUESTS=1
-ATTACK_SCORE_THRESHOLD=0.4
-IP_SWITCH_THRESHOLD=2
+
+Development preset (relaxed limits):
+```bash
+MAX_REQUESTS_PER_IP=200
+MAX_FINGERPRINT_REQUESTS=100
+IP_SWITCHING_THRESHOLD=10
+GLOBAL_ATTACK_THRESHOLD="0.9"
+PREDICTION_MAX_REQUESTS_PER_IP=50
+ADVANCED_RATE_LIMITING_ENABLED=false    # Disable for testing
 ```
 
 ---
@@ -286,20 +363,32 @@ railway up
 railway status
 ```
 
-Option 2: Docker
+Option 2: Docker Compose (recommended)
+```bash
+# In-memory storage (default)
+docker-compose up --build pneumonia-api
+
+# With Nginx reverse proxy
+docker-compose --profile production up --build
+
+# Custom environment
+docker-compose up --build -e STORAGE_BACKEND=memory -e MAX_REQUESTS_PER_IP=50
+```
+
+Option 3: Docker (manual)
 ```bash
 docker build -t pneumonia-api:v3.4.2 .
 docker run -p 8000:8000 -e APP_VERSION=3.4.2 pneumonia-api:v3.4.2
 ```
 
-Option 3: Heroku
+Option 4: Heroku
 ```bash
 heroku login
 heroku create your-app-name
 git push heroku main
 ```
 
-Option 4: Local Development
+Option 5: Local Development
 ```bash
 # Windows
 .\.venv\Scripts\Activate.ps1
@@ -407,31 +496,6 @@ Security status sample
 
 ---
 
-## 🧪 Testing & Quality
-
-Available test scripts (examples)
-- test_rate_limiting.py
-- test_concurrent_rate_limiting.py
-- test_file_upload_rate_limiting.py
-- test_rate_limit_recovery.py
-- test_ip_switching_attack.py
-- run_all_rate_limit_tests.py
-
-Advanced protection expected results (sample)
-- Overall Security Score: ~83.3/100 (Excellent)
-- Fingerprint Detection: 100%
-- IP Switching Protection: ~58.3%
-- Basic Rate Limiting: Working
-
-Final verification checklist
-- Application starts successfully
-- Rate limiter initializes properly (in-memory)
-- All endpoints functional (/health, /docs, /security/status)
-- Performance optimized (low overhead)
-- Error handling robust
-
----
-
 ## 🔄 Migration: Redis → In-Memory
 
 Why migrate?
@@ -459,39 +523,79 @@ When to use Redis again
 - Advanced analytics and distributed rate limiting
 
 How to re-enable Redis
-```
-# requirements.txt
-redis>=5.0.0
 
-# env
-STORAGE_BACKEND=redis
-REDIS_URL=redis://your-redis:6379
-REDIS_PASSWORD=****
+For single-instance with external Redis:
+```bash
+# 1. Install Redis dependency
+pip install redis>=5.0.0
+
+# 2. Set environment variables
+export STORAGE_BACKEND=redis
+export REDIS_URL=redis://localhost:6379
+export REDIS_PASSWORD=your_password  # if needed
+export REDIS_DB=0
+
+# 3. Run application
+python main.py
 ```
+
+For multi-instance production with Redis:
+```yaml
+# docker-compose.yml
+version: '3.8'
+services:
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    command: redis-server --requirepass your_secure_password
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "--raw", "incr", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+
+  pneumonia-api:
+    build: .
+    depends_on:
+      redis:
+        condition: service_healthy
+    environment:
+      STORAGE_BACKEND: redis
+      REDIS_URL: redis://:your_secure_password@redis:6379/0
+    # ... other config
+
+volumes:
+  redis_data:
+```
+
+Then run:
+```bash
+docker-compose up --build
+```
+
+When to use Redis:
+- Multiple API instances (horizontal scaling)
+- Need persistent rate limiting across restarts
+- Advanced analytics and attack pattern analysis
+- Production environments with >1000 concurrent users
 
 ---
 
-## 📈 Performance & Benchmarks
-
-In-memory backend
-- Total memory: ~20–30MB
-- Overhead: ~0.1ms/request
-- Response time increase: ~2%
-- Startup time: <1s
-
-Advanced detection accuracy
-- Overall: ~83.3/100
-- Layers: IP switching, fingerprinting, behavior analysis, global scoring
-
----
-
-## 🛠️ Troubleshooting
+##�🛠️ Troubleshooting
 
 Common issues
-- Invalid file: Ensure JPG/JPEG/PNG; max 10MB; valid X-ray content
-- Rate limit 429: Implement backoff; space out requests; monitor headers
-- Slow responses: Reduce image size; choose Standard model; check CPU/memory
-- Model not loading: Verify ONNX files; ONNX Runtime installed; check logs
+- **Invalid file**: Ensure JPG/JPEG/PNG; max 10MB; valid X-ray content
+- **Rate limit 429**: Two types of limits can trigger this
+  - Global limit: Wait for window reset or implement exponential backoff
+  - Endpoint-specific limit: `/predict` has separate tighter limits (default 20/5min)
+  - Check headers: `X-RateLimit-Limit-Predict`, `X-RateLimit-Remaining-Predict`
+- **Slow responses**: Reduce image size; choose Standard model; check CPU/memory
+- **Model not loading**: Verify ONNX files; ONNX Runtime installed; check logs
+- **Benchmark all 429s**: Likely endpoint quota exhausted; wait 5 minutes or increase `PREDICTION_MAX_REQUESTS_PER_IP`
 
 Debug tips
 ```bash
@@ -514,4 +618,4 @@ False positives/negatives
 - Cloudflare Rate Limiting: https://developers.cloudflare.com/fundamentals/api/get-started/requests-per-minute
 - NIST Cybersecurity Framework: https://www.nist.gov/cyberframework
 
-Built with FastAPI | Powered by ONNX | Secured by Design
+Built with FastAPI | Powered by ONNX
