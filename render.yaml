@@ -1,0 +1,24 @@
+services:
+	- type: web
+		name: pneumonia-detection-api
+		env: python
+		plan: free
+		autoDeploy: true
+		buildCommand: pip install --no-cache-dir -r requirements.txt
+		startCommand: python main.py
+		envVars:
+			- key: PYTHON_VERSION
+				value: 3.11
+			- key: APP_VERSION
+				value: 3.4.3
+			- key: DEBUG
+				value: "false"
+			- key: STORAGE_BACKEND
+				value: memory
+			- key: PORT
+				value: 10000
+			# Add Redis variables below if enabling Redis in future
+			# - key: STORAGE_BACKEND
+			#   value: redis
+			# - key: REDIS_URL
+			#   value: redis://:password@host:6379/0

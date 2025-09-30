@@ -1,24 +1,32 @@
-# Pneumonia Detection API v3.4.2 - Deployment Guide
+# Pneumonia Detection API v3.4.3 - Deployment Guide (Render Migration)
 
 ## 🚀 Deployment Summary
 
-**Version:** 3.4.2  
-**Release Date:** September 6, 2025  
-**Type:** Comprehensive API Documentation Enhancement & Railway Production Optimization
+**Version:** 3.4.3  
+**Release Date:** September 30, 2025  
+**Type:** Render Platform Migration & Trusted Host Update
 
 
 ## 🌐 Deployment Options
 
-### Option 1: Railway (Recommended)
-```bash
-# Ensure you're logged in to Railway
-railway login
+### Option 1: Render (Recommended)
+```
+1. Push repository to GitHub
+2. In Render: New → Web Service → Connect Repo
+3. Environment: Python
+4. Build Command: pip install -r requirements.txt
+5. Start Command: python main.py
+6. (Optional) Set env vars (APP_VERSION, DEBUG, STORAGE_BACKEND)
+7. Deploy (autoDeploy enabled)
+```
 
-# Deploy to Railway
-railway up
-
-# Check deployment status
-railway status
+Render Environment Variables (suggested):
+```
+PYTHON_VERSION=3.11
+APP_VERSION=3.4.3
+STORAGE_BACKEND=memory
+DEBUG=false
+PORT=10000
 ```
 
 ### Option 2: Docker
@@ -83,7 +91,19 @@ After deployment, verify the following endpoints:
    Expected: Model statistics and configuration
    ```
 
-## 📊 Key Improvements in v3.1.0
+## 📊 Key Improvements in v3.4.3 (Migration)
+
+### Platform
+- Migrated deployment target from Railway to Render (Git-based auto deployments)
+- Added `render.yaml` service definition
+- Removed `railway.json` legacy configuration
+
+### Security
+- Updated default trusted host to `*.onrender.com`
+
+### Documentation
+- Updated README and deployment guide to reflect Render workflow
+- Added changelog entry for migration
 
 ### Code Quality
 - **Modular Design**: Better separation of concerns in middleware
@@ -128,4 +148,4 @@ After deployment, verify the following endpoints:
 
 **Deployment Status: ✅ READY FOR PRODUCTION**
 
-*Pneumonia Detection API v3.1.0 - Deployed with enhanced code quality and security improvements*
+*Pneumonia Detection API v3.4.3 - Render migration complete*

@@ -1,5 +1,24 @@
 # Changelog
 
+## [3.4.3] - 2025-09-30 - Render Platform Migration
+
+### ✨ Added
+- Introduced official Render deployment configuration via `render.yaml` with automated build and start commands.
+
+### 🔧 Changed
+- Default trusted hosts updated from `*.railway.app` to `*.onrender.com` (Railway removed from defaults).
+- Deployment script `deploy.sh` updated to reference Render workflow and version bumped to 3.4.3.
+
+### 🗑️ Removed
+- Removed `railway.json` (legacy Railway configuration) — migrate to Render Git-based deployment.
+
+### ⚙️ Notes
+- Application continues to read dynamic `PORT` env variable (Render sets to 10000 by default for Python services).
+- Memory storage remains default; Redis can be re-enabled later without code changes.
+- If you still need Railway deployment, restore `railway.json` from git history (tag v3.4.2 or earlier).
+
+---
+
 ## [3.4.2] - 2025-09-25 - Comprehensive Architecture Refactoring & Modularization
 
 ### 🔥Breaking Changes
@@ -67,13 +86,13 @@
 - **REDUCED**: Duplicate upload processing overhead through intelligent caching
 - **IMPROVED**: Container and factory pattern implementation for better resource management
 
-### �️ Security
+### 🛡️ Security
 - **ADVANCED**: Adaptive attack scoring with fingerprint-based blocking
 - **ENHANCED**: Security transparency through separate status and statistics endpoints
 - **REDUCED**: Default attack surface by disabling external dependencies (Redis)
 - **STRENGTHENED**: Request analysis and threat detection capabilities
 
-### � Documentation
+### 📖 Documentation
 - **COMPREHENSIVE**: Production-ready README with security and deployment focus
 - **CLEAN**: OpenAPI metadata through dedicated builder system
 - **PREPARED**: Landing page template for marketing/presentation needs

@@ -356,14 +356,25 @@ ADVANCED_RATE_LIMITING_ENABLED=false    # Disable for testing
 
 ## 🌐 Deployment
 
-Option 1: Railway (Recommended)
-```bash
-railway login
-railway up
-railway status
+Option 1: Render (Recommended)
+```
+1. Fork or push repository to GitHub
+2. Open Render Dashboard → New → Web Service
+3. Connect the repository
+4. Build Command: pip install -r requirements.txt
+5. Start Command: python main.py
+6. (Optional) Set environment variables (see Configuration)
+7. Deploy (autoDeploy=true for subsequent pushes)
+```
+Default Render Env Vars:
+```
+PORT=10000
+PYTHON_VERSION=3.11
+STORAGE_BACKEND=memory
+APP_VERSION=3.4.3
 ```
 
-Option 2: Docker Compose (recommended)
+Option 2: Docker Compose (recommended for self-hosting)
 ```bash
 # In-memory storage (default)
 docker-compose up --build pneumonia-api

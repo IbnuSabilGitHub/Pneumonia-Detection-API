@@ -20,7 +20,7 @@ class Settings(BaseSettings):
 
     # Application
     app_name: str = "Pneumonia Detection API"
-    app_version: str = "3.4.2"
+    app_version: str = "3.4.3"
     debug: bool = False
 
     # Server
@@ -28,7 +28,7 @@ class Settings(BaseSettings):
     port: int = 8000
 
     # Security - Allow both string and list for Docker env vars
-    trusted_hosts: Union[List[str], str] = ["*.railway.app", "localhost", "127.0.0.1"]
+    trusted_hosts: Union[List[str], str] = ["*.onrender.com", "localhost", "127.0.0.1"]
     cors_origins: Union[List[str], str] = ["*"]  # Configure based on your frontend
 
     # File Upload
@@ -138,7 +138,7 @@ class Settings(BaseSettings):
         # Manual parsing for list fields from environment variables
         if isinstance(self.trusted_hosts, str):
             self.trusted_hosts = self._parse_string_to_list(
-                self.trusted_hosts, ["*.railway.app", "localhost", "127.0.0.1"]
+                self.trusted_hosts, ["*.onrender.com", "localhost", "127.0.0.1"]
             )
 
         if isinstance(self.cors_origins, str):
