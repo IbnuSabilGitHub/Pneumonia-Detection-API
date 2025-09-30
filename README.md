@@ -2,6 +2,8 @@
 
 Advanced AI powered medical imaging analysis service for detecting pneumonia from chest X-ray images. Built with FastAPI, powered by ONNX, and secured with a multi layer, production grade protection system.
 
+![API Status](https://img.shields.io/endpoint?url=https://pneumonia-detection-api-d7qu.onrender.com/badge.json)
+
 
 ---
 

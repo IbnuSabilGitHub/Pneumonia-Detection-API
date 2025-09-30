@@ -5,6 +5,7 @@ Health check and monitoring endpoints.
 import time
 
 from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi.responses import JSONResponse
 from slowapi import Limiter
 from slowapi.util import get_remote_address
 
@@ -108,3 +109,46 @@ async def health_check(
                 error_code="HEALTH_CHECK_FAILED",
             ).model_dump(),
         )
+
+
+@router.get(
+    "/badge.json",
+    tags=["Health"],
+    summary="Shields.io style health badge JSON",
+    description=(
+        "Returns a small JSON payload compatible with shields.io custom endpoint format. "
+        "Can be used to render a live status badge in the README."
+    ),
+)
+async def health_badge(
+    prediction_service: PneumoniaPredictionService = Depends(get_prediction_service),
+):
+    """Return a shields.io compatible badge JSON reflecting current health."""
+    try:
+        # Reuse core logic by invoking the main health function (without duplicate code)
+        health = await health_check(prediction_service)  # type: ignore
+
+        # Determine color mapping
+        status_map = {
+            "healthy": "brightgreen",
+            "partial": "yellow",
+            "unhealthy": "red",
+        }
+        color = status_map.get(health.status, "lightgrey")
+
+        badge_payload = {
+            "schemaVersion": 1,
+            "label": "API Status",
+            "message": health.status,
+            "color": color,
+        }
+        return JSONResponse(content=badge_payload)
+    except Exception as e:
+        logger.error("Badge generation failed: %s", e)
+        error_payload = {
+            "schemaVersion": 1,
+            "label": "API Status",
+            "message": "error",
+            "color": "red",
+        }
+        return JSONResponse(status_code=500, content=error_payload)
