@@ -13,7 +13,7 @@ def custom_openapi(app):
     schema = get_openapi(
         title="Pneumonia Detection API",
         version=settings.app_version,
-        description="AI Pneumonia Detection Service",
+        description="![API Status](https://img.shields.io/endpoint?url=https://pneumonia-detection-api-d7qu.onrender.com/badge.json)",
         routes=app.routes,
     )
     schema["info"]["license"] = {"name": "MIT"}

@@ -1,5 +1,21 @@
 # Changelog
 
+## [3.5.0] - 2025-09-30 - New Endpoint /badge.json
+
+### ✨ Added
+- **New endpoint** `GET /badge.json` in health monitoring:
+  - Reuses existing health check logic from health function
+  - Provides status badge compatible with shields.io schema
+  - Color mapping: 
+    - `healthy` → `brightgreen`
+    - `partial` → `yellow` 
+    - `unhealthy` → `red`
+    - `error` → `red`
+  - Returns JSON format: `{ "schemaVersion": 1, "label": "API Status", "message": "<status>", "color": "<color>" }`
+
+### Documentation
+- Updated README with note about new badge endpoint usage
+
 ## [3.4.3] - 2025-09-30 - Render Platform Migration
 
 ### ✨ Added
