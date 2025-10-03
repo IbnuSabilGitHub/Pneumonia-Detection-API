@@ -22,6 +22,15 @@ def setup_logging(
     Returns:
         Configured logger instance
     """
+    if not settings.log_enabled:
+        logging.disable(logging.CRITICAL)
+        logger = logging.getLogger(settings.app_name)
+        logger.handlers.clear()
+        logger.addHandler(logging.NullHandler())
+        return logger
+
+    logging.disable(logging.NOTSET)
+
     log_level = level or settings.log_level
     log_format = format_string or settings.log_format
 
@@ -30,6 +39,7 @@ def setup_logging(
         level=getattr(logging, log_level.upper()),
         format=log_format,
         handlers=[logging.StreamHandler(sys.stdout)],
+        force=True,
     )
 
     # Create application logger
@@ -38,6 +48,16 @@ def setup_logging(
     # Set third-party loggers to WARNING to reduce noise
     logging.getLogger("uvicorn.access").setLevel(logging.WARNING)
     logging.getLogger("onnxruntime").setLevel(logging.WARNING)
+
+    # Optional: unify uvicorn logging into our handler / format
+    if getattr(settings, "log_unify_uvicorn", False):
+        for name in ["uvicorn", "uvicorn.error", "uvicorn.access"]:
+            lg = logging.getLogger(name)
+            # Clear existing handlers (uvicorn sets its own)
+            lg.handlers.clear()
+            # Let them bubble to our root/basicConfig handlers
+            lg.propagate = True
+        logger.debug("Uvicorn logging unified under application logger format")
 
     return logger
 

@@ -7,7 +7,7 @@ This document provides comprehensive information about all configuration setting
 | Setting | Type | Default Value | Environment Variable | Description | Example Values |
 |---------|------|---------------|----------------------|-------------|----------------|
 | `app_name` | str | "Pneumonia Detection API" | `APP_NAME` | Application name displayed in API docs | "Pneumonia Detection API", "Medical AI API" |
-| `app_version` | str | "3.4.2" | `APP_VERSION` | API version for documentation and headers | "3.4.2", "1.0.0" |
+| `app_version` | str | "3.4.3" | `APP_VERSION` | API version for documentation and headers | "3.4.3", "1.0.0" |
 | `debug` | bool | False | `DEBUG` | Enable debug mode for development | `True`, `False` |
 
 ## Server Configuration
@@ -137,7 +137,24 @@ This document provides comprehensive information about all configuration setting
 | Setting | Type | Default Value | Environment Variable | Description | Example Values |
 |---------|------|---------------|----------------------|-------------|----------------|
 | `log_level` | str | "INFO" | `LOG_LEVEL` | Logging level | "DEBUG", "INFO", "WARNING", "ERROR" |
-| `log_format` | str | "%(asctime)s - %(name)s - %(levelname)s - %(message)s" | `LOG_FORMAT` | Log message format | Custom format strings |
+| `log_enabled` | bool | True | `LOG_ENABLED` | Master switch to enable or silence application logs | `True`, `False` |
+| `log_include_timestamp` | bool | True | `LOG_INCLUDE_TIMESTAMP` | Include timestamps in auto-generated formats | `True`, `False` |
+| `log_include_level` | bool | True | `LOG_INCLUDE_LEVEL` | Include the log level label | `True`, `False` |
+| `log_include_logger_name` | bool | True | `LOG_INCLUDE_LOGGER_NAME` | Include the logger name (`%(name)s`) | `True`, `False` |
+| `log_include_module` | bool | False | `LOG_INCLUDE_MODULE` | Include module name (`%(module)s`) | `True`, `False` |
+| `log_include_process` | bool | False | `LOG_INCLUDE_PROCESS` | Include process identifier (`pid=%(process)d`) | `True`, `False` |
+| `log_include_thread` | bool | False | `LOG_INCLUDE_THREAD` | Include thread name (`thread=%(threadName)s`) | `True`, `False` |
+| `log_include_filename` | bool | False | `LOG_INCLUDE_FILENAME` | Include the source filename (`%(filename)s`) | `True`, `False` |
+| `log_include_line_number` | bool | False | `LOG_INCLUDE_LINE_NUMBER` | Include the source line number (`%(lineno)d`) | `True`, `False` |
+| `log_field_separator` | str | " - " | `LOG_FIELD_SEPARATOR` | Separator inserted between auto-generated fields | " | "`, " :: "`, " — "` |
+| `log_format` | Optional[str] | Auto (uses toggles above) | `LOG_FORMAT` | Fully custom format string that overrides the toggle-based builder | "%(levelname)s: %(message)s" |
+| `log_format_with_timestamp` | str | "%(asctime)s - %(name)s - %(levelname)s - %(message)s" | `LOG_FORMAT_WITH_TIMESTAMP` | Legacy default when timestamps are enabled and advanced toggles remain default | Custom format strings |
+| `log_format_without_timestamp` | str | "%(name)s - %(levelname)s - %(message)s" | `LOG_FORMAT_WITHOUT_TIMESTAMP` | Legacy default when timestamps are disabled and advanced toggles remain default | Custom format strings |
+
+> **Tips:**
+> - Flip `LOG_INCLUDE_TIMESTAMP=false` to remove timestamps without touching code.
+> - Combine the `LOG_INCLUDE_*` flags and `LOG_FIELD_SEPARATOR` to assemble the exact log layout you need.
+> - Set `LOG_ENABLED=false` to silence application logs entirely while keeping the service running.
 
 ## Deployment Settings
 
@@ -160,6 +177,13 @@ export MAX_REQUESTS_PER_IP=20
 export IP_SWITCHING_THRESHOLD=5
 export ATTACK_BLOCK_DURATION=600
 
+# Logging
+export LOG_ENABLED=true
+export LOG_INCLUDE_TIMESTAMP=false
+export LOG_INCLUDE_LEVEL=false
+export LOG_INCLUDE_LOGGER_NAME=false
+export LOG_FIELD_SEPARATOR=" | "
+
 # Redis Configuration
 export STORAGE_BACKEND=redis
 export REDIS_HOST=my-redis-server.com
@@ -172,7 +196,7 @@ export REDIS_DB=1
 ```env
 # Application Settings
 APP_NAME=Pneumonia Detection API
-APP_VERSION=3.4.2
+APP_VERSION=3.4.3
 DEBUG=false
 
 # Server Configuration
@@ -189,6 +213,13 @@ ATTACK_BLOCK_DURATION=900
 # Storage Backend
 STORAGE_BACKEND=memory
 MEMORY_MAX_SIZE=15000
+
+# Logging
+LOG_ENABLED=true
+LOG_INCLUDE_TIMESTAMP=false
+LOG_INCLUDE_LEVEL=true
+LOG_INCLUDE_LOGGER_NAME=true
+LOG_FIELD_SEPARATOR=" | "
 
 # Security
 TRUSTED_HOSTS=["*.mydomain.com", "localhost"]

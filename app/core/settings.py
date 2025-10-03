@@ -113,7 +113,22 @@ class Settings(BaseSettings):
 
     # Logging
     log_level: str = "INFO"
-    log_format: str = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+    log_enabled: bool = True
+    log_format: Optional[str] = None
+    log_include_timestamp: bool = True
+    log_include_level: bool = True
+    log_include_logger_name: bool = True
+    log_include_module: bool = False
+    log_include_process: bool = False
+    log_include_thread: bool = False
+    log_include_filename: bool = False
+    log_include_line_number: bool = False
+    log_field_separator: str = " - "
+    log_format_with_timestamp: str = (
+        "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+    )
+    log_format_without_timestamp: str = "%(name)s - %(levelname)s - %(message)s"
+    log_unify_uvicorn: bool = False
 
     # Railway specific
     railway_environment: Optional[str] = None
@@ -155,6 +170,12 @@ class Settings(BaseSettings):
                 self.allowed_extensions, [".jpg", ".jpeg", ".png"]
             )
 
+        if not self.log_field_separator:
+            self.log_field_separator = " "
+
+        if not self.log_format:
+            self.log_format = self._build_log_format()
+
         # Debug logging untuk melihat dari mana values dibaca
         logger.info("🔧 Configuration loaded successfully")
         logger.info(f"Rate limiting enabled: {self.advanced_rate_limiting_enabled}")
@@ -162,6 +183,77 @@ class Settings(BaseSettings):
         logger.info(f"Attack block duration: {self.attack_block_duration} seconds")
         logger.info(f"Trusted hosts: {self.trusted_hosts}")
         logger.info(f"Storage backend: {self.storage_backend}")
+        logger.info(f"Logging enabled: {self.log_enabled}")
+        logger.info(
+            "Log inclusions — timestamp: %s, level: %s, name: %s, module: %s, process: %s, thread: %s, filename: %s, line: %s",
+            self.log_include_timestamp,
+            self.log_include_level,
+            self.log_include_logger_name,
+            self.log_include_module,
+            self.log_include_process,
+            self.log_include_thread,
+            self.log_include_filename,
+            self.log_include_line_number,
+        )
+        logger.info(f"Log separator: '{self.log_field_separator}'")
+        logger.info(f"Resolved log format: {self.log_format}")
+        logger.info(f"Unify uvicorn logging: {self.log_unify_uvicorn}")
+
+    def _has_advanced_log_options(self) -> bool:
+        """Determine if advanced logging options are enabled."""
+        return any(
+            [
+                not self.log_include_level,
+                not self.log_include_logger_name,
+                self.log_include_module,
+                self.log_include_process,
+                self.log_include_thread,
+                self.log_include_filename,
+                self.log_include_line_number,
+                self.log_field_separator != " - ",
+            ]
+        )
+
+    def _build_log_format(self) -> str:
+        """Build log format string based on configuration toggles."""
+        if not self._has_advanced_log_options():
+            return (
+                self.log_format_with_timestamp
+                if self.log_include_timestamp
+                else self.log_format_without_timestamp
+            )
+
+        parts: List[str] = []
+
+        if self.log_include_timestamp:
+            parts.append("%(asctime)s")
+
+        if self.log_include_level:
+            parts.append("%(levelname)s")
+
+        if self.log_include_logger_name:
+            parts.append("%(name)s")
+
+        if self.log_include_module:
+            parts.append("%(module)s")
+
+        if self.log_include_process:
+            parts.append("pid=%(process)d")
+
+        if self.log_include_thread:
+            parts.append("thread=%(threadName)s")
+
+        if self.log_include_filename and self.log_include_line_number:
+            parts.append("%(filename)s:%(lineno)d")
+        elif self.log_include_filename:
+            parts.append("%(filename)s")
+        elif self.log_include_line_number:
+            parts.append("line=%(lineno)d")
+
+        parts.append("%(message)s")
+
+        separator = self.log_field_separator or " "
+        return separator.join(parts)
 
     def get_redis_config(self) -> dict:
         """Get Redis configuration dictionary."""
