@@ -50,6 +50,22 @@ async def health_check_alt(
     return await health_check(prediction_service)
 
 
+@router.head("/health", tags=["Health"])
+async def health_head(
+    prediction_service: PneumoniaPredictionService = Depends(get_prediction_service),
+):
+    # Return 200 immediately; avoid heavy checks for HEAD
+    return JSONResponse(status_code=200, content=None)
+
+
+@router.head("/", tags=["Health"])
+async def root_head(
+    prediction_service: PneumoniaPredictionService = Depends(get_prediction_service),
+):
+    # Return 200 for root HEAD probes
+    return JSONResponse(status_code=200, content=None)
+
+
 @router.get("/", response_model=HealthResponse, tags=["Health"], **health_metadata)
 async def health_check(
     prediction_service: PneumoniaPredictionService = Depends(get_prediction_service),
