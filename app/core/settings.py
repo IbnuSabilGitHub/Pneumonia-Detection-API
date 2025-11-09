@@ -20,7 +20,7 @@ class Settings(BaseSettings):
 
     # Application
     app_name: str = "Pneumonia Detection API"
-    app_version: str = "3.4.3"
+    app_version: str = "3.5.1"
     debug: bool = False
 
     # Server
@@ -30,6 +30,11 @@ class Settings(BaseSettings):
     # Security - Allow both string and list for Docker env vars
     trusted_hosts: Union[List[str], str] = ["*.onrender.com", "localhost", "127.0.0.1"]
     cors_origins: Union[List[str], str] = ["*"]  # Configure based on your frontend
+    
+    # Admin API Security
+    admin_api_key: Optional[str] = None  # Set via ADMIN_API_KEY env var for /stats and /status endpoints
+    enable_public_stats: bool = False  # Set to True to allow unauthenticated access to /stats
+    enable_public_status: bool = False  # Set to True to allow unauthenticated access to /status
 
     # File Upload
     max_file_size: int = 10 * 1024 * 1024  # 10 MB

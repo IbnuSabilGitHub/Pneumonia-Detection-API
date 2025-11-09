@@ -184,13 +184,17 @@ curl -X POST "http://localhost:8000/pneumonia/predict" \
   - Returns: { status: healthy|partial|unhealthy, model_loaded, version, uptime }
   - Health check with service status and model availability
 
-**Security Management**
-- `GET /security/status`
+**Security Management (🔒 Admin Only - Requires API Key)**
+- `GET /status` 🔒
+  - **Authentication Required**: `X-Admin-API-Key` header
   - Real-time protection status, attack scores, and current metrics
   - Returns active threats, request rates, blocked fingerprints
-- `GET /security/stats`
+  - **Purpose**: Admin monitoring and incident response
+- `GET /stats` 🔒
+  - **Authentication Required**: `X-Admin-API-Key` header
   - Comprehensive security analytics dashboard
   - Detailed threat analysis, traffic patterns, and protection effectiveness
+  - **Purpose**: Security team analysis and system tuning
 
 **Pneumonia Detection (Core Features)**
 - `POST /pneumonia/predict`
@@ -277,10 +281,16 @@ Retry-After: 60
 Environment Variables (common)
 ```bash
 # App Configuration
-APP_VERSION=3.4.2
+APP_VERSION=3.5.1
 DEBUG=false
 HOST=0.0.0.0
 PORT=8000
+
+# Admin Security (REQUIRED for /stats and /status endpoints)
+# Generate with: openssl rand -hex 32
+ADMIN_API_KEY=your-secure-admin-api-key-here
+ENABLE_PUBLIC_STATS=false    # NOT RECOMMENDED for production
+ENABLE_PUBLIC_STATUS=false   # NOT RECOMMENDED for production
 
 # Storage Backend (default: memory)
 STORAGE_BACKEND=memory   # Options: memory | redis
@@ -414,7 +424,7 @@ python main.py
 
 Post-deployment verification
 - GET /health → status, model_loaded, version, uptime
-- GET /security/status → active, metrics
+- GET /status → active, metrics (🔒 requires ADMIN_API_KEY)
 - GET /docs → interactive docs
 - GET /pneumonia/model/info → model stats
 
@@ -440,8 +450,13 @@ curl -X POST "http://localhost:8000/pneumonia/predict?model=efficientnet_b0" \
 # Model info
 curl -X GET "http://localhost:8000/pneumonia/model/info?model=standard"
 
-# Security status
-curl -X GET "http://localhost:8000/security/status"
+# Security status (🔒 ADMIN ONLY - Requires API Key)
+curl -X GET "http://localhost:8000/status" \
+  -H "X-Admin-API-Key: your-admin-api-key"
+
+# Security stats (🔒 ADMIN ONLY - Requires API Key)
+curl -X GET "http://localhost:8000/stats" \
+  -H "X-Admin-API-Key: your-admin-api-key"
 ```
 
 Python (requests)
@@ -613,7 +628,11 @@ Common issues
 Debug tips
 ```bash
 curl http://localhost:8000/health | jq
-curl http://localhost:8000/security/status | jq
+
+# Admin endpoints require API key
+curl -H "X-Admin-API-Key: YOUR_KEY" http://localhost:8000/status | jq
+curl -H "X-Admin-API-Key: YOUR_KEY" http://localhost:8000/stats | jq
+
 tail -f logs/security.log | grep "BLOCKED\|ATTACK"
 ```
 

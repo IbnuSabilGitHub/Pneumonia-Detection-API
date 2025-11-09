@@ -4,11 +4,13 @@ Security Status Endpoint
 
 from datetime import datetime
 
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status
 
 from ..core.logger import get_logger
+from ..core.settings import settings
 from ..docs.sections.status_metadata import StatusMetadata
 from ..models.security_schemes import SecurityErrorResponse, SecurityStatusResponse
+from ..utils.auth import verify_admin_api_key
 
 logger = get_logger(__name__)
 router = APIRouter()
@@ -73,7 +75,9 @@ def _map_security_data_to_model(security_data: dict) -> dict:
     response_model=SecurityStatusResponse,
     **status_metadata,
 )
-async def get_security_status() -> SecurityStatusResponse:
+async def get_security_status(
+    api_key: str = Depends(verify_admin_api_key) if not settings.enable_public_status else None
+) -> SecurityStatusResponse:
     """
     **Advanced Security System Status**
 

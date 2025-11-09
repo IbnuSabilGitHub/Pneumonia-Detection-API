@@ -1,5 +1,107 @@
 # Changelog
 
+## [3.5.1] - 2025-11-09 - Admin Endpoints Security Enhancement
+
+### 🔒 Security Improvements
+- **BREAKING**: Admin endpoints `/stats` and `/status` now require authentication
+  - Previously public endpoints are now protected with API key authentication
+  - Prevents information disclosure and attack intelligence gathering
+  - Implements "defense in depth" security principle
+
+### ✨ Added
+- **NEW**: Admin API key authentication system (`app/utils/auth.py`)
+  - Header-based authentication: `X-Admin-API-Key`
+  - Constant-time comparison to prevent timing attacks
+  - Graceful degradation when admin key not configured (503 Service Unavailable)
+- **NEW**: Configuration options in `settings.py`:
+  - `ADMIN_API_KEY`: Required API key for admin endpoints (generated via `openssl rand -hex 32`)
+  - `ENABLE_PUBLIC_STATS`: Optional flag to allow public access (default: `false`, not recommended)
+  - `ENABLE_PUBLIC_STATUS`: Optional flag to allow public access (default: `false`, not recommended)
+- **NEW**: Comprehensive admin security documentation (`doc/ADMIN_ENDPOINTS_SECURITY.md`)
+  - API key generation guide
+  - Usage examples with curl
+  - Security best practices
+  - Migration guide from public to private endpoints
+  - Troubleshooting common issues
+
+### 🔧 Changed
+- **MODIFIED**: `/stats` endpoint now requires `X-Admin-API-Key` header (unless `ENABLE_PUBLIC_STATS=true`)
+- **MODIFIED**: `/status` endpoint now requires `X-Admin-API-Key` header (unless `ENABLE_PUBLIC_STATUS=true`)
+- **UPDATED**: Docker Compose configuration with `ADMIN_API_KEY` environment variable
+- **UPDATED**: `.env.example` with admin security configuration examples
+
+### 🛡️ Security Rationale
+**Why protect these endpoints?**
+1. **Information Disclosure Prevention**: Attackers cannot view real-time threat metrics
+2. **Attack Intelligence Mitigation**: Prevents adversaries from monitoring detection effectiveness
+3. **System Profiling Protection**: Hides internal system performance and architecture details
+4. **Industry Best Practice**: Aligns with GitHub, AWS, and Stripe security models
+
+### 📊 Impact Analysis
+**Who needs access to `/stats` and `/status`?**
+- ✅ **Admin/DevOps Teams**: For monitoring, debugging, and incident response
+- ✅ **Security Teams**: For threat analysis and security tuning
+- ❌ **Public Users**: No legitimate need for internal security metrics
+- ❌ **API Consumers**: Should only see their own quota (not global metrics)
+
+### 🚀 Migration Guide
+
+**Before (v3.5.0 and earlier):**
+```bash
+curl https://api.example.com/stats
+# ✅ 200 OK - Public access
+```
+
+**After (v3.5.1+):**
+```bash
+# Without API key
+curl https://api.example.com/stats
+# ❌ 401 Unauthorized
+
+# With API key
+curl -H "X-Admin-API-Key: YOUR_SECRET_KEY" https://api.example.com/stats
+# ✅ 200 OK - Authenticated access
+```
+
+**Setup Steps:**
+```bash
+# 1. Generate secure API key
+openssl rand -hex 32
+
+# 2. Set environment variable
+export ADMIN_API_KEY="your-generated-key"
+
+# 3. Restart service
+docker-compose restart pneumonia-api
+```
+
+### 📖 Documentation Updates
+- **UPDATED**: `README.md` - Admin endpoints now marked as authenticated
+- **UPDATED**: `doc/API_DOCUMENTATION.md` - Authentication requirements documented
+- **UPDATED**: `doc/SECURITY-FEATURES.md` - Admin authentication section added
+- **ADDED**: `doc/ADMIN_ENDPOINTS_SECURITY.md` - Complete security guide
+
+### ⚠️ Breaking Changes
+**Action Required for Existing Users:**
+1. Generate and set `ADMIN_API_KEY` environment variable
+2. Update monitoring scripts to include `X-Admin-API-Key` header
+3. Update CI/CD pipelines that access `/stats` or `/status`
+4. Review and update any third-party integrations
+
+**Temporary Workaround (Development Only):**
+```bash
+# NOT RECOMMENDED FOR PRODUCTION
+ENABLE_PUBLIC_STATS=true
+ENABLE_PUBLIC_STATUS=true
+```
+
+### 🔗 Related Documentation
+- [Admin Endpoints Security Guide](doc/ADMIN_ENDPOINTS_SECURITY.md)
+- [Security Features Overview](doc/SECURITY-FEATURES.md)
+- [API Documentation](doc/API_DOCUMENTATION.md)
+
+---
+
 ## [3.5.0] - 2025-09-30 - New Endpoint /badge.json
 
 ### ✨ Added

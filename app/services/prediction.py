@@ -152,7 +152,7 @@ class PneumoniaPredictionService:
             if confidence > model_config.HIGH_CONFIDENCE_THRESHOLD:
                 return "URGENT: Immediate medical consultation required"
             elif confidence > model_config.MEDIUM_CONFIDENCE_THRESHOLD:
-                return "edical consultation strongly recommended"
+                return "Medical consultation strongly recommended"
             else:
                 return "Consider medical consultation"
         else:

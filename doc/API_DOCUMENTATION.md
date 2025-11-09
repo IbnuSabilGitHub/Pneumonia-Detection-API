@@ -131,19 +131,32 @@ Returns detailed information about the loaded AI model.
 }
 ```
 
-### 🛡️ Security & Monitoring
+### 🛡️ Security & Monitoring (Admin Only)
 
-#### `GET /security/status`
+#### `GET /status` 🔒
 **Security System Status**
 
+**⚠️ AUTHENTICATION REQUIRED**: This endpoint requires admin API key authentication.
+
 Returns real-time status of the security protection system.
+
+**Request Headers:**
+```http
+X-Admin-API-Key: your-admin-api-key-here
+```
+
+**Request Example:**
+```bash
+curl -X GET "http://localhost:8000/status" \
+     -H "X-Admin-API-Key: your-admin-api-key"
+```
 
 **Response:**
 ```json
 {
   "service": "Pneumonia Detection API",
   "security_status": "active",
-  "timestamp": "2025-09-05T10:30:00.000Z",
+  "timestamp": "2025-11-09T10:30:00.000Z",
   "advanced_protection": {
     "global_attack_score": 0.15,
     "requests_per_minute": 23,
@@ -162,10 +175,39 @@ Returns real-time status of the security protection system.
 }
 ```
 
-#### `GET /security/stats`
+**Error Responses:**
+```json
+// 401 Unauthorized - Missing API key
+{
+  "error": "Missing API key",
+  "message": "Admin endpoints require X-Admin-API-Key header",
+  "required_header": "X-Admin-API-Key"
+}
+
+// 403 Forbidden - Invalid API key
+{
+  "error": "Invalid API key",
+  "message": "The provided API key is not valid"
+}
+```
+
+#### `GET /stats` 🔒
 **Detailed Security Statistics**
 
+**⚠️ AUTHENTICATION REQUIRED**: This endpoint requires admin API key authentication.
+
 Returns comprehensive security analytics and threat assessment.
+
+**Request Headers:**
+```http
+X-Admin-API-Key: your-admin-api-key-here
+```
+
+**Request Example:**
+```bash
+curl -X GET "http://localhost:8000/stats" \
+     -H "X-Admin-API-Key: your-admin-api-key"
+```
 
 **Response:**
 ```json
@@ -177,7 +219,7 @@ Returns comprehensive security analytics and threat assessment.
     "blocked_fingerprints": 3,
     "storage_type": "memory"
   },
-  "timestamp": "2025-09-05T10:30:00.000Z",
+  "timestamp": "2025-11-09T10:30:00.000Z",
   "interpretation": {
     "attack_score": {
       "value": 0.25,
@@ -192,7 +234,44 @@ Returns comprehensive security analytics and threat assessment.
 }
 ```
 
+**Why are these endpoints protected?**
+
+These endpoints are protected to prevent:
+1. **Information Disclosure**: Attackers viewing real-time threat detection metrics
+2. **Attack Intelligence Gathering**: Adversaries monitoring detection effectiveness
+3. **System Profiling**: Exposure of internal performance and architecture
+4. **Security Best Practice**: Aligns with industry standards (GitHub, AWS, Stripe)
+
+**Who should have access?**
+- ✅ **Admin/DevOps Teams**: Monitoring, debugging, incident response
+- ✅ **Security Teams**: Threat analysis and protection tuning
+- ❌ **Public Users**: No legitimate need for internal security metrics
+- ❌ **API Consumers**: Should only see their own quotas, not global metrics
+
+**Setup Instructions:**
+```bash
+# 1. Generate secure API key
+openssl rand -hex 32
+
+# 2. Set environment variable
+export ADMIN_API_KEY="your-generated-key"
+
+# 3. Restart service
+docker-compose restart pneumonia-api
+
+# 4. Test authentication
+curl -H "X-Admin-API-Key: your-key" http://localhost:8000/status
+```
+
+For complete admin security documentation, see: [ADMIN_ENDPOINTS_SECURITY.md](ADMIN_ENDPOINTS_SECURITY.md)
+
 ## 🔐 Authentication & Security
+
+### Admin Endpoint Authentication
+- **Protected Endpoints**: `/status`, `/stats`
+- **Method**: API Key in header (`X-Admin-API-Key`)
+- **Required**: Yes (unless `ENABLE_PUBLIC_STATS=true` / `ENABLE_PUBLIC_STATUS=true`)
+- **Key Generation**: `openssl rand -hex 32`
 
 ### Rate Limiting
 - **Prediction Endpoints**: 5 requests per minute per IP

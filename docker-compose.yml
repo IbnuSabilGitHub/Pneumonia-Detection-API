@@ -44,6 +44,11 @@ services:
       PREDICTION_MAX_REQUESTS_PER_IP: "18"
       PREDICTION_RATE_WINDOW: "300"
       
+      # ADMIN SECURITY - Protect /stats and /status endpoints
+      # IMPORTANT: Generate secure key with: openssl rand -hex 32
+      ADMIN_API_KEY: "${ADMIN_API_KEY}"  # Set in .env file - NEVER commit!
+      ENABLE_PUBLIC_STATS: "false"  # Set true only for development
+      ENABLE_PUBLIC_STATUS: "false"  # Set true only for development
       
       # IN-MEMORY STORAGE CONFIGURATION - FREE TIER OPTIMIZED
       MEMORY_MAX_SIZE: "1000"

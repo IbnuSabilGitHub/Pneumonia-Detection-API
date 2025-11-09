@@ -4,11 +4,13 @@ Security Statistics Endpoint
 
 from datetime import datetime
 
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status
 
 from ..core.logger import get_logger
+from ..core.settings import settings
 from ..docs.sections.stat_metadata import StatMetadata
 from ..models.security_schemes import SecurityStatsErrorResponse, SecurityStatsResponse
+from ..utils.auth import verify_admin_api_key
 
 logger = get_logger(__name__)
 router = APIRouter()
@@ -18,7 +20,9 @@ stat_metadata = StatMetadata.get_metadata()
 @router.get(
     "/stats", tags=["Security"], response_model=SecurityStatsResponse, **stat_metadata
 )
-async def get_security_stats() -> SecurityStatsResponse:
+async def get_security_stats(
+    api_key: str = Depends(verify_admin_api_key) if not settings.enable_public_stats else None
+) -> SecurityStatsResponse:
     """
     **omprehensive Security Analytics Dashboard**
 

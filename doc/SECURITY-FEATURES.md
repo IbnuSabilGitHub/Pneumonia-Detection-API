@@ -1,8 +1,76 @@
-# Pneumonia Detection API - Security Documentation v3.1.0
+# Pneumonia Detection API - Security Documentation v3.5.1
 
 ## Advanced Security Features for Production & Learning
 
-This API implements **enterprise-grade security features** with advanced protection mechanisms. The following are the comprehensive security features implemented in v3.1.0:
+This API implements **enterprise-grade security features** with advanced protection mechanisms. The following are the comprehensive security features implemented in v3.5.1:
+
+## 🔐 Admin Endpoint Authentication (NEW in v3.5.1)
+
+### 1. Protected Security Endpoints
+- **Admin-Only Access**: `/stats` and `/status` endpoints require authentication
+- **API Key Authentication**: Header-based authentication (`X-Admin-API-Key`)
+- **Constant-Time Comparison**: Protection against timing attacks
+- **Configurable Access**: Optional public access for development (not recommended)
+
+### Why Admin Authentication?
+**Security Rationale:**
+1. **Information Disclosure Prevention**: Attackers cannot view real-time security metrics
+2. **Attack Intelligence Mitigation**: Prevents monitoring of detection effectiveness
+3. **System Profiling Protection**: Hides internal performance and architecture
+4. **Industry Best Practice**: Aligns with GitHub, AWS, and Stripe security models
+
+**Who Should Have Access:**
+- ✅ **Admin/DevOps Teams**: Monitoring, debugging, incident response
+- ✅ **Security Teams**: Threat analysis and protection tuning
+- ❌ **Public Users**: No legitimate need for internal security metrics
+- ❌ **API Consumers**: Should only see their own quotas, not global metrics
+
+### Configuration
+```bash
+# Generate secure API key
+openssl rand -hex 32
+
+# Set in environment
+ADMIN_API_KEY=your-generated-secure-key-here
+
+# Optional: Enable public access (NOT RECOMMENDED for production)
+ENABLE_PUBLIC_STATS=false
+ENABLE_PUBLIC_STATUS=false
+```
+
+### Usage Examples
+```bash
+# ✅ Authenticated request (REQUIRED)
+curl -H "X-Admin-API-Key: your-key" http://localhost:8000/status
+
+# ❌ Unauthenticated request (BLOCKED)
+curl http://localhost:8000/status
+# Response: 401 Unauthorized
+```
+
+**Error Responses:**
+```json
+// 401 Unauthorized - Missing API key
+{
+  "error": "Missing API key",
+  "message": "Admin endpoints require X-Admin-API-Key header",
+  "required_header": "X-Admin-API-Key"
+}
+
+// 403 Forbidden - Invalid API key
+{
+  "error": "Invalid API key",
+  "message": "The provided API key is not valid"
+}
+
+// 503 Service Unavailable - API key not configured
+{
+  "error": "Admin endpoints not configured",
+  "message": "Contact administrator to enable admin features"
+}
+```
+
+**Complete Documentation**: See [ADMIN_ENDPOINTS_SECURITY.md](ADMIN_ENDPOINTS_SECURITY.md) for full setup guide.
 
 ## 🛡️ Advanced Rate Limiting & Attack Protection
 
@@ -100,21 +168,22 @@ ALLOWED_EXTENSIONS=.jpg,.jpeg,.png
 
 ## 🚀 Advanced API Usage
 
-### Security Status Monitoring
+### Security Status Monitoring (🔒 Admin Only)
 ```bash
-# Get comprehensive security status
-curl -X GET "http://localhost:8000/security/status"
+# Get comprehensive security status (REQUIRES API KEY)
+curl -X GET "http://localhost:8000/status" \
+     -H "X-Admin-API-Key: your-admin-api-key"
 ```
 
 **Enhanced Response:**
 ```json
 {
   "service": "Pneumonia Detection API",
-  "version": "3.1.0",
+  "version": "3.5.1",
   "security_status": "active",
-  "timestamp": "2025-08-25T18:45:00.000Z",
+  "timestamp": "2025-11-09T18:45:00.000Z",
   "rate_limiter": {
-    "storage_backend": "redis",
+    "storage_backend": "memory",
     "storage_initialized": true,
     "active_ips": 5,
     "blocked_fingerprints": 2,
@@ -122,20 +191,22 @@ curl -X GET "http://localhost:8000/security/status"
     "recent_ips_count": 3
   },
   "advanced_features": [
+    "Admin API Authentication",
     "IP Switching Attack Protection",
     "Request Fingerprinting",
     "Behavioral Analysis", 
     "Global Attack Scoring",
-    "Redis Distributed Storage",
+    "In-Memory Storage",
     "Enhanced Security Headers"
   ]
 }
 ```
 
-### Security Statistics Endpoint
+### Security Statistics Endpoint (🔒 Admin Only)
 ```bash
-# Get detailed security statistics  
-curl -X GET "http://localhost:8000/security/stats"
+# Get detailed security statistics (REQUIRES API KEY)
+curl -X GET "http://localhost:8000/stats" \
+     -H "X-Admin-API-Key: your-admin-api-key"
 ```
 
 **Response:**
@@ -151,13 +222,15 @@ curl -X GET "http://localhost:8000/security/stats"
     "behavioral_anomalies": 1
   },
   "storage_info": {
-    "backend": "redis",
+    "backend": "memory",
     "connection_status": "healthy",
     "total_keys": 156,
     "memory_usage": "2.3MB"
   }
 }
 ```
+
+**⚠️ Authentication Required**: Both endpoints require `X-Admin-API-Key` header since v3.5.1
 
 ## 🛡️ Advanced Error Responses & Security Events
 
