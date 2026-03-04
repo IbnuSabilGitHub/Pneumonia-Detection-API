@@ -36,6 +36,12 @@ class Settings(BaseSettings):
     enable_public_stats: bool = False  # Set to True to allow unauthenticated access to /stats
     enable_public_status: bool = False  # Set to True to allow unauthenticated access to /status
 
+    # Supabase JWT Authentication (ES256 only)
+    jwt_auth_enabled: bool = False  # Master toggle for JWT authentication
+    supabase_url: Optional[str] = None  # Supabase project URL (e.g. https://<project>.supabase.co) - REQUIRED for JWKS endpoint
+    supabase_anon_key: Optional[str] = None  # Supabase anon key (optional, for client-side reference)
+    supabase_jwt_verify_audience: bool = True  # Verify 'aud' claim in JWT (default: authenticated)
+
     # File Upload
     max_file_size: int = 10 * 1024 * 1024  # 10 MB
     allowed_extensions: Union[List[str], str] = [".jpg", ".jpeg", ".png"]
@@ -188,6 +194,11 @@ class Settings(BaseSettings):
         logger.info(f"Attack block duration: {self.attack_block_duration} seconds")
         logger.info(f"Trusted hosts: {self.trusted_hosts}")
         logger.info(f"Storage backend: {self.storage_backend}")
+        logger.info(f"JWT auth enabled: {self.jwt_auth_enabled}")
+        if self.jwt_auth_enabled:
+            logger.info(f"Supabase URL: {self.supabase_url or 'NOT SET - REQUIRED'}")
+            logger.info(f"JWT algorithm: ES256 (Supabase standard)")
+            logger.info(f"Verify audience: {self.supabase_jwt_verify_audience}")
         logger.info(f"Logging enabled: {self.log_enabled}")
         logger.info(
             "Log inclusions — timestamp: %s, level: %s, name: %s, module: %s, process: %s, thread: %s, filename: %s, line: %s",

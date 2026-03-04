@@ -47,6 +47,7 @@ The Pneumonia Detection API provides AI inference for chest X-ray images using d
   - Medical recommendations included in responses
 
 - Security & Protection
+  - **JWT Authentication via Supabase** (Bearer token)
   - Multi-layer advanced rate limiting
   - Request fingerprinting
   - IP switching attack detection
@@ -171,6 +172,7 @@ curl -X GET "http://localhost:8000/health"
 Basic Prediction
 ```bash
 curl -X POST "http://localhost:8000/pneumonia/predict" \
+     -H "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" \
      -H "Content-Type: multipart/form-data" \
      -F "file=@chest_xray.jpg"
 ```
@@ -186,18 +188,19 @@ curl -X POST "http://localhost:8000/pneumonia/predict" \
 
 **Security Management (🔒 Admin Only - Requires API Key)**
 - `GET /status` 🔒
-  - **Authentication Required**: `X-Admin-API-Key` header
+  - **Authentication Required**: `Authorization: Bearer <admin_jwt>` OR `X-Admin-API-Key` header
   - Real-time protection status, attack scores, and current metrics
   - Returns active threats, request rates, blocked fingerprints
   - **Purpose**: Admin monitoring and incident response
 - `GET /stats` 🔒
-  - **Authentication Required**: `X-Admin-API-Key` header
+  - **Authentication Required**: `Authorization: Bearer <admin_jwt>` OR `X-Admin-API-Key` header
   - Comprehensive security analytics dashboard
   - Detailed threat analysis, traffic patterns, and protection effectiveness
   - **Purpose**: Security team analysis and system tuning
 
 **Pneumonia Detection (Core Features)**
-- `POST /pneumonia/predict`
+- `POST /pneumonia/predict` 🔒
+  - **Authentication Required**: `Authorization: Bearer <supabase_jwt>` header
   - Params: `file` (JPG/JPEG/PNG, max 10MB), optional `model=standard|efficientnet_b0`
   - Returns: prediction, confidence, probabilities, medical recommendation, model info
   - **Rate limited**: endpoint-specific limits apply (default: 20 requests per 5 minutes per IP)
@@ -286,7 +289,16 @@ DEBUG=false
 HOST=0.0.0.0
 PORT=8000
 
-# Admin Security (REQUIRED for /stats and /status endpoints)
+# JWT Authentication (Supabase)
+JWT_AUTH_ENABLED=true                   # Master toggle for JWT auth
+SUPABASE_URL=https://your-project.supabase.co
+SUPABASE_JWT_SECRET=your-jwt-secret     # Settings → API → JWT Secret
+SUPABASE_ANON_KEY=your-anon-key         # Optional, for reference
+JWT_ALGORITHM=HS256                     # Default Supabase algorithm
+SUPABASE_JWT_VERIFY_AUDIENCE=true       # Verify 'aud' claim
+
+# Admin Security (for /stats and /status endpoints)
+# Supports BOTH JWT admin role AND legacy API key
 # Generate with: openssl rand -hex 32
 ADMIN_API_KEY=your-secure-admin-api-key-here
 ENABLE_PUBLIC_STATS=false    # NOT RECOMMENDED for production
@@ -437,24 +449,32 @@ cURL
 # Health
 curl -X GET "http://localhost:8000/health"
 
-# Predict (standard)
+# Predict (standard) — 🔒 JWT required
 curl -X POST "http://localhost:8000/pneumonia/predict" \
+  -H "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" \
   -H "Content-Type: multipart/form-data" \
   -F "file=@chest_xray.jpg"
 
-# Predict (EfficientNet-B0)
+# Predict (EfficientNet-B0) — 🔒 JWT required
 curl -X POST "http://localhost:8000/pneumonia/predict?model=efficientnet_b0" \
+  -H "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" \
   -H "Content-Type: multipart/form-data" \
   -F "file=@chest_xray.jpg"
 
 # Model info
 curl -X GET "http://localhost:8000/pneumonia/model/info?model=standard"
 
-# Security status (🔒 ADMIN ONLY - Requires API Key)
+# Security status (🔒 ADMIN ONLY — JWT admin role or API Key)
+curl -X GET "http://localhost:8000/status" \
+  -H "Authorization: Bearer $ADMIN_JWT_TOKEN"
+# OR legacy API key:
 curl -X GET "http://localhost:8000/status" \
   -H "X-Admin-API-Key: your-admin-api-key"
 
-# Security stats (🔒 ADMIN ONLY - Requires API Key)
+# Security stats (🔒 ADMIN ONLY — JWT admin role or API Key)
+curl -X GET "http://localhost:8000/stats" \
+  -H "Authorization: Bearer $ADMIN_JWT_TOKEN"
+# OR legacy API key:
 curl -X GET "http://localhost:8000/stats" \
   -H "X-Admin-API-Key: your-admin-api-key"
 ```
@@ -462,9 +482,21 @@ curl -X GET "http://localhost:8000/stats" \
 Python (requests)
 ```python
 import requests
+
+# Step 1: Get Supabase access token
+auth = requests.post(
+    "https://your-project.supabase.co/auth/v1/token?grant_type=password",
+    headers={"apikey": "your-anon-key", "Content-Type": "application/json"},
+    json={"email": "user@example.com", "password": "password123"},
+    timeout=10,
+)
+token = auth.json()["access_token"]
+
+# Step 2: Predict with JWT
 with open("chest_xray.jpg", "rb") as f:
     r = requests.post(
         "http://localhost:8000/pneumonia/predict",
+        headers={"Authorization": f"Bearer {token}"},
         files={"file": ("chest_xray.jpg", f, "image/jpeg")},
         params={"model": "efficientnet_b0"},
         timeout=30
@@ -472,23 +504,6 @@ with open("chest_xray.jpg", "rb") as f:
 print(r.status_code, r.json())
 ```
 
-Node.js (axios)
-```javascript
-const axios = require("axios");
-const FormData = require("form-data");
-const fs = require("fs");
-
-(async () => {
-  const form = new FormData();
-  form.append("file", fs.createReadStream("chest_xray.jpg"));
-  const res = await axios.post(
-    "http://localhost:8000/pneumonia/predict?model=standard",
-    form,
-    { headers: form.getHeaders() }
-  );
-  console.log(res.data);
-})();
-```
 
 More examples: Python async, Browser fetch, Java, C#, PHP available in USAGE_EXAMPLES.
 
@@ -613,7 +628,7 @@ When to use Redis:
 
 ---
 
-##�🛠️ Troubleshooting
+## 🛠️ Troubleshooting
 
 Common issues
 - **Invalid file**: Ensure JPG/JPEG/PNG; max 10MB; valid X-ray content
@@ -645,9 +660,12 @@ False positives/negatives
 
 ## 🔗 References
 
+- Supabase Auth Docs: https://supabase.com/docs/guides/auth
+- JWT Authentication Guide: [doc/SUPABASE_JWT_AUTH.md](doc/SUPABASE_JWT_AUTH.md)
 - OWASP Rate Limiting Guide: https://owasp.org/www-community/controls/Blocking_Brute_Force_Attacks
 - RFC 6585 - HTTP 429: https://tools.ietf.org/html/rfc6585
 - Cloudflare Rate Limiting: https://developers.cloudflare.com/fundamentals/api/get-started/requests-per-minute
 - NIST Cybersecurity Framework: https://www.nist.gov/cyberframework
 
 Built with FastAPI | Powered by ONNX
+Last updated: 2025-03-04 | Version: 3.6.0

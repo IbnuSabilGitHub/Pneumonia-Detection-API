@@ -10,7 +10,7 @@ from ..core.logger import get_logger
 from ..core.settings import settings
 from ..docs.sections.status_metadata import StatusMetadata
 from ..models.security_schemes import SecurityErrorResponse, SecurityStatusResponse
-from ..utils.auth import verify_admin_api_key
+from ..utils.jwt_auth import verify_admin_jwt_or_api_key
 
 logger = get_logger(__name__)
 router = APIRouter()
@@ -76,7 +76,7 @@ def _map_security_data_to_model(security_data: dict) -> dict:
     **status_metadata,
 )
 async def get_security_status(
-    api_key: str = Depends(verify_admin_api_key) if not settings.enable_public_status else None
+    admin_id: str = Depends(verify_admin_jwt_or_api_key) if not settings.enable_public_status else None,
 ) -> SecurityStatusResponse:
     """
     **Advanced Security System Status**

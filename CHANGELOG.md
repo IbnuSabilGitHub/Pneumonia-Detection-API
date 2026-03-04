@@ -1,5 +1,30 @@
 # Changelog
 
+## [3.6.0] - 2026-03-04 - Supabase JWT Authentication Integration
+
+### ✨ Major Features
+- **NEW**: Comprehensive Supabase JWT authentication system
+  - Automatic JWKS public key fetching for production tokens
+  - Bearer token validation with configurable token expiry checks
+  - User extraction with role-based access control
+
+- **PROTECTED**: `/pneumonia/predict` endpoint now requires JWT authentication
+  - Prevents unauthorized access to core prediction service
+  - Includes user audit logging with Supabase user ID
+  - Maintains request fingerprints with authenticated user context
+
+- **ENHANCED**: `/security/status` and `/security/stats` endpoints
+  - Support dual authentication: JWT (admin role) **OR** legacy API key
+  - Backward compatible with existing API key integrations
+  - Improved admin role detection (checks top-level role, app_metadata, user_metadata)
+
+### ⚠️ Breaking Changes
+- `/pneumonia/predict` now requires `Authorization: Bearer <access_token>` header
+- Clients must obtain JWT from Supabase before calling predict endpoint
+- Existing API integrations without JWT support will receive 401/503 errors
+
+---
+
 ## [3.5.1] - 2025-11-09 - Admin Endpoints Security Enhancement
 
 ### 🔒 Security Improvements

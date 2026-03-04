@@ -1,4 +1,4 @@
-version: '3.8'
+version: '3.6.0'
 
 services:
   # Main API application - IN-MEMORY ONLY
@@ -11,7 +11,7 @@ services:
     ports:
       - "8000:8000"
     environment:
-      APP_VERSION: "3.4.2"
+      APP_VERSION: "3.6.0"
       DEBUG: "false"
       # FORCE IN-MEMORY STORAGE
       STORAGE_BACKEND: "memory"

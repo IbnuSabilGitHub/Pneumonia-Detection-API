@@ -23,6 +23,7 @@ from ..utils.exceptions import (
     PredictionError,
 )
 from ..utils.get_prediction_service import get_prediction_service
+from ..utils.jwt_auth import JWTPayload, get_current_user
 from ..utils.security import calculate_file_hash, file_hash_cache, get_client_ip
 from ..utils.validation import (
     get_image_stats,
@@ -115,6 +116,7 @@ async def predict_pneumonia(
         description="Chest X-ray image file (JPG, JPEG, PNG - max 10MB)",
         example="chest_xray.jpg",
     ),
+    user: JWTPayload = Depends(get_current_user),
     prediction_service: PneumoniaPredictionService = Depends(get_prediction_service),
 ):
     """
@@ -131,6 +133,7 @@ async def predict_pneumonia(
     5. **Medical Guidance**: Contextual recommendations
 
     **Security Features:**
+    - **JWT Authentication** (Supabase Bearer token required)
     - Rate limiting (5 requests/minute per IP)
     - Duplicate detection and prevention
     - Comprehensive request logging
@@ -139,6 +142,7 @@ async def predict_pneumonia(
     **Args:**
         request: FastAPI request object (for security tracking)
         file: Uploaded chest X-ray image file
+        user: Authenticated user from Supabase JWT (auto-injected)
         prediction_service: AI model service (auto-injected)
 
     **Returns:**
@@ -306,7 +310,8 @@ async def predict_pneumonia(
 
         # Log successful prediction
         logger.info(
-            "Prediction OK | ip=%s file=%s hash=%s size=%s model=%s pred=%s conf=%.3f infer=%.3fs wait=%.3fs ep_count=%d",
+            "Prediction OK | user=%s ip=%s file=%s hash=%s size=%s model=%s pred=%s conf=%.3f infer=%.3fs wait=%.3fs ep_count=%d",
+            user.user_id,
             client_ip,
             file.filename,
             file_hash[:8],

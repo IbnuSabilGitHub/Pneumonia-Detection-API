@@ -3,6 +3,7 @@
 Centralized schema model exports for API responses.
 """
 
+from .auth_schemas import AuthenticatedUser, AuthErrorResponse, TokenInfo
 from .base import BaseErrorResponse
 from .error_codes import ErrorCode
 from .health_schemas import HealthErrorResponse, HealthResponse
@@ -11,6 +12,10 @@ from .prediction_schemas import PredictionErrorResponse, PredictionResponse
 from .security_schemes import SecurityStatsResponse, SecurityStatusResponse
 
 __all__ = [
+    # Auth
+    "AuthErrorResponse",
+    "AuthenticatedUser",
+    "TokenInfo",
     # Health
     "HealthResponse",
     "HealthErrorResponse",

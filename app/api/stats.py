@@ -10,7 +10,7 @@ from ..core.logger import get_logger
 from ..core.settings import settings
 from ..docs.sections.stat_metadata import StatMetadata
 from ..models.security_schemes import SecurityStatsErrorResponse, SecurityStatsResponse
-from ..utils.auth import verify_admin_api_key
+from ..utils.jwt_auth import verify_admin_jwt_or_api_key
 
 logger = get_logger(__name__)
 router = APIRouter()
@@ -21,7 +21,7 @@ stat_metadata = StatMetadata.get_metadata()
     "/stats", tags=["Security"], response_model=SecurityStatsResponse, **stat_metadata
 )
 async def get_security_stats(
-    api_key: str = Depends(verify_admin_api_key) if not settings.enable_public_stats else None
+    admin_id: str = Depends(verify_admin_jwt_or_api_key) if not settings.enable_public_stats else None,
 ) -> SecurityStatsResponse:
     """
     **omprehensive Security Analytics Dashboard**

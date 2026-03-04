@@ -1,14 +1,13 @@
 #!/bin/bash
 
-# Pneumonia Detection API Deployment Script v3.4.3 (Render Migration)
-# This script handles the deployment process for the refactored API
+# Pneumonia Detection API Deployment Script v3.6.0 
 
-echo "🚀 Deploying Pneumonia Detection API v3.4.3 (Render Migration)"
+echo "🚀 Deploying Pneumonia Detection API v3.6.0 "
 echo "============================================="
 
 # 1. Version Check
 echo "📋 Version Information:"
-echo "   - API Version: 3.4.3"
+echo "   - API Version: 3.6.0"
 echo "   - Release Date: $(date +%Y-%m-%d)"
 echo "   - Features: Render Platform Migration, Trusted Host Update (*.onrender.com)"
 
@@ -65,5 +64,5 @@ echo "   - API Docs: GET /docs"
 echo "   - Model Info: GET /pneumonia/model/info"
 
 echo ""
-echo "🎉 Pneumonia Detection API v3.4.3 (Render Migration) deployment preparation complete!"
+echo "🎉 Pneumonia Detection API v3.6.0 (Render Migration) deployment preparation complete!"
 echo "📝 Removed: railway.json (legacy)"
