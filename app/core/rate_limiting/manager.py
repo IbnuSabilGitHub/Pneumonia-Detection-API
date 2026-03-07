@@ -1,7 +1,7 @@
 import logging
 from typing import Dict, Optional, Tuple
 
-from app.core.storage_backends import StorageBackend
+from ..storage_backends import StorageBackend
 
 logger = logging.getLogger(__name__)
 

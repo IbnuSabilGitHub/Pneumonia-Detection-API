@@ -2,12 +2,12 @@ import logging
 import time
 from typing import Any, Dict, Optional, Tuple
 
-from app.core.rate_limiting.detection import AttackDetector
-from app.core.rate_limiting.fingerprint import FingerprintManager
-from app.core.rate_limiting.manager import RateLimitManager
-from app.core.settings import Settings
-from app.core.storage_backends import StorageBackend
-from app.core.storage_factory import StorageFactory, StorageType
+from .detection import AttackDetector
+from .fingerprint import FingerprintManager
+from .manager import RateLimitManager
+from ..settings import Settings
+from ..storage_backends import StorageBackend
+from ..storage_factory import StorageFactory, StorageType
 
 logger = logging.getLogger(__name__)
 

@@ -1,8 +1,8 @@
 import logging
 from typing import Any, Dict, Optional
 
-from app.core.settings import Settings
-from app.core.storage_factory import StorageType
+from ..settings import Settings
+from ..storage_factory import StorageType
 
 from .core import AdvancedRateLimiter
 

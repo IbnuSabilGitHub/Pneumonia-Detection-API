@@ -3,7 +3,7 @@ import time
 from collections import defaultdict, deque
 from typing import Any, Dict, List, Optional
 
-from app.core.storage_backends import StorageBackend
+from ..storage_backends import StorageBackend
 
 logger = logging.getLogger(__name__)
 

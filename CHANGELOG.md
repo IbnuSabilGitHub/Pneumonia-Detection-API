@@ -1,5 +1,20 @@
 # Changelog
 
+## [3.6.1] - 2026-03-07 -  improve code quality and organization
+
+- Add Redis feature detection at module level in storage_factory.py
+- Standardize imports to relative paths in rate_limiting module
+- Reorganize and complete .env.example with all config variables
+- Review auth module structure (no changes needed - already well organized)
+- Add comprehensive refactoring documentation
+
+Changes:
+- storage_factory.py: Better Redis availability handling with clear error messages
+- rate_limiting/*.py: Convert absolute imports to relative imports
+- .env.example: Add missing variables, organize with section headers
+- Add REFACTOR_COMPLETED.md for detailed change documentation
+
+
 ## [3.6.0] - 2026-03-04 - Supabase JWT Authentication Integration
 
 ### ✨ Major Features

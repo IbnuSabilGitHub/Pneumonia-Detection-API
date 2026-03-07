@@ -3,8 +3,8 @@ import logging
 import time
 from typing import Dict, List, Optional
 
-from app.core.rate_limiting.storage import RequestFingerprint
-from app.core.storage_backends import StorageBackend
+from .storage import RequestFingerprint
+from ..storage_backends import StorageBackend
 
 logger = logging.getLogger(__name__)
 
