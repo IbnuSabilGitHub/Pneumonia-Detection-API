@@ -15,9 +15,21 @@ sys.path.insert(0, str(current_dir))
 try:
     # Try importing from the app module
     from app.main import app
-except ImportError:
+except ImportError as e:
     # Fallback: create a simple app if import fails
     from fastapi import FastAPI
+    from pydantic import BaseModel
+    import sys
+    
+    print(f"⚠️  Warning: Failed to import app.main: {e}", file=sys.stderr)
+    print("⚠️  Running in fallback mode with limited functionality", file=sys.stderr)
+
+    class FallbackHealthResponse(BaseModel):
+        """Fallback health response model."""
+        message: str
+        status: str
+        version: str
+        note: str
 
     app = FastAPI(
         title="Pneumonia Detection API",
@@ -25,15 +37,26 @@ except ImportError:
         version="3.6.0",
     )
 
-    @app.get("/")
-    @app.get("/health")
-    async def root():
-        return {
-            "message": "Pneumonia Detection API is running",
-            "status": "healthy",
-            "version": "3.6.0",
-            "note": "Fallback mode - Please check if all dependencies are installed correctly",
-        }
+    @app.get(
+        "/",
+        response_model=FallbackHealthResponse,
+        tags=["Health"],
+        summary="Health Check (Fallback Mode)"
+    )
+    @app.get(
+        "/health",
+        response_model=FallbackHealthResponse,
+        tags=["Health"],
+        summary="Health Check (Fallback Mode)"
+    )
+    async def fallback_health_check() -> FallbackHealthResponse:
+        """Fallback health check endpoint when main app fails to load."""
+        return FallbackHealthResponse(
+            message="Pneumonia Detection API is running in fallback mode",
+            status="degraded",
+            version="3.6.0",
+            note="Fallback mode - Please check if all dependencies are installed correctly",
+        )
 
 
 # For FastAPI CLI compatibility

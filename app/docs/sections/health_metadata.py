@@ -84,6 +84,7 @@ class HealthMetadata:
             },
         )
 
+    @staticmethod
     def get_500_response() -> Dict[str, Any]:
         return build_response(
             description="Internal server error during health check",

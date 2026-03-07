@@ -6,7 +6,7 @@ from functools import lru_cache
 from typing import Dict, Optional
 
 from ..services.prediction import PneumoniaPredictionService
-from .advanced_rate_limiting import AdvancedRateLimiter
+from .rate_limiting import AdvancedRateLimiter
 from .logger import get_logger
 
 logger = get_logger(__name__)

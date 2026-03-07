@@ -6,7 +6,7 @@ import asyncio
 from typing import Any, Dict, List, Optional, Union
 
 from ..services.prediction import PneumoniaPredictionService
-from .advanced_rate_limiting import create_advanced_rate_limiter
+from .rate_limiting.api import create_advanced_rate_limiter
 from .logger import get_logger
 from .storage_factory import StorageType
 

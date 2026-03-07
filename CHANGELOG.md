@@ -1,5 +1,10 @@
 # Changelog
 
+## [3.6.2] - 2026-03-08 - fix: Add missing @staticmethod, fix rate limiting imports, improve fallback response
+- Fix Missing @staticmethod in health_metadata.py
+- Fix Import Errors (Root Cause)
+- Improve Fallback Endpoint in main.py
+
 ## [3.6.1] - 2026-03-07 -  Improve code quality and organization
 
 - Add Redis feature detection at module level in storage_factory.py
