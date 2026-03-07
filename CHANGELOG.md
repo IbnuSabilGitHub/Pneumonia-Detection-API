@@ -1,6 +1,6 @@
 # Changelog
 
-## [3.6.1] - 2026-03-07 -  improve code quality and organization
+## [3.6.1] - 2026-03-07 -  Improve code quality and organization
 
 - Add Redis feature detection at module level in storage_factory.py
 - Standardize imports to relative paths in rate_limiting module
