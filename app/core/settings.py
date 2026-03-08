@@ -100,18 +100,7 @@ class Settings(BaseSettings):
     attack_reduction_factor: float = 0.5  # Reduce limits by 50% during attacks
 
     # Storage Backend Configuration
-    storage_backend: str = "memory"  # Options: memory, redis, database
-
-    # Redis Configuration (optional - for future use if needed)
-    redis_host: str = "localhost"
-    redis_port: int = 6379
-    redis_password: Optional[str] = None
-    redis_db: int = 0
-    redis_url: Optional[str] = None
-    redis_max_connections: int = 50
-    redis_cluster_mode: bool = False
-    redis_cluster_nodes: Optional[str] = None  # JSON string of cluster nodes
-    redis_key_prefix: str = "pneumonia_api:rate_limit:"
+    storage_backend: str = "memory"  # Options: memory, database
 
     # In-Memory Storage Configuration (optimized for free tier)
     memory_max_size: int = 1000  # Reduced for memory efficiency
@@ -271,33 +260,9 @@ class Settings(BaseSettings):
         separator = self.log_field_separator or " "
         return separator.join(parts)
 
-    def get_redis_config(self) -> dict:
-        """Get Redis configuration dictionary."""
-        import json
-
-        cluster_nodes = None
-        if self.redis_cluster_nodes:
-            try:
-                cluster_nodes = json.loads(self.redis_cluster_nodes)
-            except (json.JSONDecodeError, TypeError):
-                cluster_nodes = None
-
-        return {
-            "host": self.redis_host,
-            "port": self.redis_port,
-            "password": self.redis_password,
-            "db": self.redis_db,
-            "max_connections": self.redis_max_connections,
-            "cluster_mode": self.redis_cluster_mode,
-            "cluster_nodes": cluster_nodes,
-            "key_prefix": self.redis_key_prefix,
-        }
-
     def get_storage_config(self) -> dict:
         """Get storage backend configuration."""
-        if self.storage_backend == "redis":
-            return self.get_redis_config()
-        elif self.storage_backend == "memory":
+        if self.storage_backend == "memory":
             return {
                 "max_size": self.memory_max_size,
                 "cleanup_interval": self.memory_cleanup_interval,

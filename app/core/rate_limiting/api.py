@@ -9,9 +9,9 @@ from .core import AdvancedRateLimiter
 logger = logging.getLogger(__name__)
 
 
-# Global instance with Redis storage capability
+# Global instance with in-memory storage
 async def create_advanced_rate_limiter(
-    storage_type: StorageType = StorageType.REDIS,
+    storage_type: StorageType = StorageType.MEMORY,
     storage_config: Optional[Dict[str, Any]] = None,
 ) -> AdvancedRateLimiter:
     """Create and initialize advanced rate limiter with storage backend."""

@@ -43,7 +43,7 @@ from various attacks and abuse patterns.</p>
 <li><strong>System Status</strong>: Overall security system health</li>
 <li><strong>Active Protections</strong>: List of enabled security features</li>
 <li><strong>Threat Level</strong>: Current global attack probability</li>
-<li><strong>Storage Backend</strong>: In-memory or Redis storage status</li>
+<li><strong>Storage Backend</strong>: In-memory storage status</li>
 <li><strong>Performance Metrics</strong>: Security system performance data</li>
 </ul>
 """

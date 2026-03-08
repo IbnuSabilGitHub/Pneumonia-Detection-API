@@ -65,7 +65,7 @@ if await self.fingerprint_manager.is_fingerprint_blocked(fingerprint):
 
 #### **Configuration:**
 - **Block Duration**: `fingerprint_block_duration` (default: 5 detik untuk testing)
-- **Storage**: Redis/Memory dengan TTL
+- **Storage**: In-Memory dengan TTL
 - **Fingerprint Generation**: SHA-256 hash dari User-Agent, Accept-Language, dll
 
 ---
@@ -665,7 +665,7 @@ COORDINATED_ATTACK_THRESHOLD=5     # 5 coordinated requests
 ### **Critical Alerts (Immediate Response)**
 - Global attack score > 0.8 for 5+ minutes
 - More than 100 blocked fingerprints in 1 hour
-- Storage backend failures (Redis down)
+- Storage backend failures
 - Coordinated attacks detected (same file hash abuse)
 
 ### **Warning Alerts (Monitor Closely)**

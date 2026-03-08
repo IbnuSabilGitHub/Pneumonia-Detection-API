@@ -29,7 +29,7 @@ and protection effectiveness over time.</p>
 <li><strong>IP Activity Tracking</strong>: Unique IP address patterns and behavior</li>
 <li><strong>Blocking Statistics</strong>: Currently blocked requests and fingerprints</li>
 <li><strong>Performance Metrics</strong>: Security system response times</li>
-<li><strong>Storage Utilization</strong>: Memory/Redis usage statistics</li>
+<li><strong>Storage Utilization</strong>: Memory usage statistics</li>
 </ul>
 """
 

@@ -1,5 +1,28 @@
 # Changelog
 
+## [3.7.0] - 2026-03-08 - Complete Redis Removal
+
+### Breaking Changes
+- **REMOVED**: Complete Redis support and all related code
+  - Deleted `redis_storage.py` module entirely
+  - Removed Redis from storage factory and backend options
+  - Cleaned up all Redis imports and references
+  - Removed Redis from dependencies (requirements.txt)
+  - Eliminated Redis configuration from settings and .env.example
+
+### Architecture Simplification  
+- **Storage Backend**: Now only supports `memory` and `database` (future)
+  - Simplified from 3 options (memory, redis, database) to 2
+  - Default remains `memory` for optimal single-instance deployment
+  - Removed optional Redis scaling path
+- **Rate Limiting**: Default storage changed from Redis to memory in rate_limiting/api.py
+- **Configuration**: Removed all Redis-related environment variables:
+  - `REDIS_HOST`, `REDIS_PORT`, `REDIS_PASSWORD`, `REDIS_DB`
+  - `REDIS_URL`, `REDIS_MAX_CONNECTIONS`, `REDIS_CLUSTER_MODE`
+  - `REDIS_CLUSTER_NODES`, `REDIS_KEY_PREFIX`
+
+---
+
 ## [3.6.2] - 2026-03-08 - fix: Add missing @staticmethod, fix rate limiting imports, improve fallback response
 - Fix Missing @staticmethod in health_metadata.py
 - Fix Import Errors (Root Cause)

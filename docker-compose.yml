@@ -15,8 +15,6 @@ services:
       DEBUG: "false"
       # FORCE IN-MEMORY STORAGE
       STORAGE_BACKEND: "memory"
-      # REMOVE REDIS_URL to prevent Redis connection attempts
-      # REDIS_URL: ""  # Commented out completely
       
       # PRODUCTION CONFIGURATION - FREE TIER OPTIMIZED
       ADVANCED_RATE_LIMITING_ENABLED: "true"
@@ -60,10 +58,6 @@ services:
       CORS_ORIGINS: "*"
       EXCLUDED_PATHS: "/health,/,/docs,/redoc,/openapi.json"
       ALLOWED_EXTENSIONS: ".jpg,.jpeg,.png"
-    # REMOVE DEPENDENCY ON REDIS
-    # depends_on:
-    #   redis:
-    #     condition: service_healthy
     networks:
       - pneumonia-network
     volumes:
@@ -101,11 +95,6 @@ services:
         limits:
           cpus: "0.2"
           memory: 64M
-
-# FIXED: Remove volumes section completely since we don't need any named volumes
-# volumes:
-#   redis_data:
-#     driver: local
 
 networks:
   pneumonia-network:

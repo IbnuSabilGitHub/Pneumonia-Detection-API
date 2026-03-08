@@ -112,8 +112,8 @@ After deployment, verify the following endpoints:
 - **Maintainability**: Cleaner code structure for easier updates
 
 ### Performance & Scalability
-- **In-Memory Storage**: Default rate limiting with in-memory storage for better performance
-- **Reduced Dependencies**: Removed Redis dependency for simpler deployment
+- **In-Memory Storage**: Rate limiting with in-memory storage for better performance
+- **Reduced Dependencies**: Simplified deployment with fewer external dependencies
 - **Memory Efficient**: Optimized memory usage with automatic cleanup
 - **Railway Optimized**: Perfect for Railway deployment constraints
 
@@ -126,17 +126,16 @@ After deployment, verify the following endpoints:
 ## 🚨 Important Notes
 
 1. **Environment Variables**: Ensure production environment has correct settings
-2. **Storage Configuration**: Uses in-memory storage by default for simplicity
+2. **Storage Configuration**: Uses in-memory storage for rate limiting
 3. **Model Files**: Ensure ONNX model files are properly deployed
 4. **Health Checks**: Monitor the `/health` endpoint for service status
-5. **Redis (Optional)**: Can be enabled later for enhanced rate limiting if needed
 
 ## 🆘 Troubleshooting
 
 ### Common Issues
 1. **Import Errors**: Ensure all dependencies are installed
 2. **Model Loading**: Check model files are in the correct path
-3. **Rate Limiter**: Uses in-memory storage by default (no Redis required)
+3. **Rate Limiter**: Uses in-memory storage (no external dependencies required)
 4. **Port Issues**: Ensure the correct port is configured
 
 ### Support

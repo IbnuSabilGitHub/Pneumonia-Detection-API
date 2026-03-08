@@ -14,7 +14,7 @@ logger = logging.getLogger(__name__)
 
 class AdvancedRateLimiter:
     """
-    Advanced rate limiter with IP switching attack detection and Redis storage.
+    Advanced rate limiter with IP switching attack detection and in-memory storage.
     Now composed of specialized components for better maintainability.
     """
 

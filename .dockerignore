@@ -91,7 +91,6 @@ temp/
 # Attack test results
 ip_switching_attack_results_*.json
 data_user.json
-redis_ping_test.py
 test_*.py
 
 # Build artifacts

@@ -22,6 +22,3 @@ python-json-logger>=2.0.7
 
 # Environment management
 python-dotenv>=1.0.0
-
-# Optional: Redis support for production rate limiting (uncomment if needed)
-# redis>=5.0.0

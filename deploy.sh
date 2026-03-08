@@ -37,7 +37,7 @@ echo "   - Heroku: Supported (Procfile available)"
 # 4. Environment Setup
 echo ""
 echo "🔧 Environment Configuration:"
-echo "   - Storage Backend: Redis (Production) / Memory (Development)"
+echo "   - Storage Backend: In-Memory (Production-ready)"
 echo "   - Rate Limiting: Advanced IP Switching Protection"
 echo "   - Security Headers: Enabled"
 echo "   - CORS: Configured"
