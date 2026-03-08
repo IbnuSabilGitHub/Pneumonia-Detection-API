@@ -406,3 +406,4 @@ async def verify_admin_jwt_or_api_key(
         },
         headers={"WWW-Authenticate": "Bearer"},
     )
+

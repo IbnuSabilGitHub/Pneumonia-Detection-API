@@ -2,6 +2,8 @@
 Pneumonia Detection API
 """
 
-__version__ = "3.6.0"
+from .version import CURRENT_API_VERSION
+
+__version__ = CURRENT_API_VERSION
 __author__ = "IbnuSabillGitHub"
 __description__ = "Educational pneumonia detection API"

@@ -1,8 +1,38 @@
 # Changelog
 
+## [3.7.1] - 2026-03-09 - Remove X-Admin-API-Key Authentication
+
+###  Breaking Changes
+- **REMOVED**: `X-Admin-API-Key` authentication from admin endpoints (`/status` and `/stats`)
+  - Admin endpoints now **only** accept JWT Bearer token authentication
+  - Removed dual authentication support (JWT OR API Key)
+  - Removed `verify_admin_jwt_or_api_key` function logic for API Key fallback
+  - **Migration Required**: Update all admin endpoint clients to use JWT authentication
+
+###  Security Improvements
+- **Simplified Authentication**: Single authentication method (JWT only) reduces attack surface
+- **Removed Legacy Code**: Eliminated API Key authentication system (`app/utils/auth.py` functions no longer used)
+- **Better Security Model**: JWT tokens with role-based access control (RBAC) are more secure than shared API keys
+
+
+### Impact
+- **Breaking Change**: All existing API clients using `X-Admin-API-Key` will fail with 401 Unauthorized
+- **Security Enhancement**: Single authentication method simplifies security audit
+- **Code Cleanup**: Removed ~200+ lines of legacy authentication code and documentation
+- **Documentation Update**: 15+ files updated to reflect JWT-only authentication
+
+###  Benefits
+-  **More Secure**: JWT tokens with expiry and role-based access control
+- **Better Auditability**: JWT tokens include user identity for audit trails
+-  **Simplified Maintenance**: Single authentication flow reduces complexity
+-  **Modern Standard**: JWT is industry standard for API authentication
+-  **Breaking**: Requires all clients to migrate to JWT authentication
+
+---
+
 ## [3.7.0] - 2026-03-08 - Complete Redis Removal
 
-### Breaking Changes
+### 🗑️ Breaking Changes
 - **REMOVED**: Complete Redis support and all related code
   - Deleted `redis_storage.py` module entirely
   - Removed Redis from storage factory and backend options

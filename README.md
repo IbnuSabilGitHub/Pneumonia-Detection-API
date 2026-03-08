@@ -186,14 +186,14 @@ curl -X POST "http://localhost:8000/pneumonia/predict" \
   - Returns: { status: healthy|partial|unhealthy, model_loaded, version, uptime }
   - Health check with service status and model availability
 
-**Security Management (🔒 Admin Only - Requires API Key)**
+**Security Management (🔒 Admin Only - Requires Admin JWT)**
 - `GET /status` 🔒
-  - **Authentication Required**: `Authorization: Bearer <admin_jwt>` OR `X-Admin-API-Key` header
+  - **Authentication Required**: `Authorization: Bearer <admin_jwt>` header
   - Real-time protection status, attack scores, and current metrics
   - Returns active threats, request rates, blocked fingerprints
   - **Purpose**: Admin monitoring and incident response
 - `GET /stats` 🔒
-  - **Authentication Required**: `Authorization: Bearer <admin_jwt>` OR `X-Admin-API-Key` header
+  - **Authentication Required**: `Authorization: Bearer <admin_jwt>` header
   - Comprehensive security analytics dashboard
   - Detailed threat analysis, traffic patterns, and protection effectiveness
   - **Purpose**: Security team analysis and system tuning
@@ -464,19 +464,13 @@ curl -X POST "http://localhost:8000/pneumonia/predict?model=efficientnet_b0" \
 # Model info
 curl -X GET "http://localhost:8000/pneumonia/model/info?model=standard"
 
-# Security status (🔒 ADMIN ONLY — JWT admin role or API Key)
+# Security status (🔒 ADMIN ONLY — JWT admin role required)
 curl -X GET "http://localhost:8000/status" \
   -H "Authorization: Bearer $ADMIN_JWT_TOKEN"
-# OR legacy API key:
-curl -X GET "http://localhost:8000/status" \
-  -H "X-Admin-API-Key: your-admin-api-key"
 
-# Security stats (🔒 ADMIN ONLY — JWT admin role or API Key)
+# Security stats (🔒 ADMIN ONLY — JWT admin role required)
 curl -X GET "http://localhost:8000/stats" \
   -H "Authorization: Bearer $ADMIN_JWT_TOKEN"
-# OR legacy API key:
-curl -X GET "http://localhost:8000/stats" \
-  -H "X-Admin-API-Key: your-admin-api-key"
 ```
 
 Python (requests)
@@ -644,9 +638,9 @@ Debug tips
 ```bash
 curl http://localhost:8000/health | jq
 
-# Admin endpoints require API key
-curl -H "X-Admin-API-Key: YOUR_KEY" http://localhost:8000/status | jq
-curl -H "X-Admin-API-Key: YOUR_KEY" http://localhost:8000/stats | jq
+# Admin endpoints require admin JWT
+curl -H "Authorization: Bearer YOUR_ADMIN_JWT" http://localhost:8000/status | jq
+curl -H "Authorization: Bearer YOUR_ADMIN_JWT" http://localhost:8000/stats | jq
 
 tail -f logs/security.log | grep "BLOCKED\|ATTACK"
 ```

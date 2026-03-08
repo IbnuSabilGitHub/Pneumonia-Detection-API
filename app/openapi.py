@@ -18,7 +18,7 @@ def custom_openapi(app):
     )
     schema["info"]["license"] = {"name": "MIT"}
 
-    # Add security schemes (Supabase JWT + Legacy API Key)
+    # Add security schemes (Supabase JWT only)
     schema.setdefault("components", {})
     schema["components"]["securitySchemes"] = {
         "SupabaseJWT": {
@@ -28,15 +28,6 @@ def custom_openapi(app):
             "description": (
                 "Supabase JWT access token. Obtain by signing in via "
                 "Supabase Auth (email/password, OAuth, magic link, etc.)."
-            ),
-        },
-        "AdminAPIKey": {
-            "type": "apiKey",
-            "in": "header",
-            "name": "X-Admin-API-Key",
-            "description": (
-                "Legacy admin API key for /security/* endpoints. "
-                "Set via ADMIN_API_KEY environment variable."
             ),
         },
     }

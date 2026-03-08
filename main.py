@@ -7,6 +7,10 @@ import os
 import sys
 from pathlib import Path
 
+from app.version import CURRENT_API_VERSION
+
+APP_VERSION = CURRENT_API_VERSION
+
 # Add the current directory to Python path for proper imports
 current_dir = Path(__file__).parent
 sys.path.insert(0, str(current_dir))
@@ -34,7 +38,7 @@ except ImportError as e:
     app = FastAPI(
         title="Pneumonia Detection API",
         description="API for pneumonia detection from chest X-ray images",
-        version="3.6.0",
+        version=APP_VERSION,
     )
 
     @app.get(
@@ -54,7 +58,7 @@ except ImportError as e:
         return FallbackHealthResponse(
             message="Pneumonia Detection API is running in fallback mode",
             status="degraded",
-            version="3.6.0",
+            version=APP_VERSION,
             note="Fallback mode - Please check if all dependencies are installed correctly",
         )
 

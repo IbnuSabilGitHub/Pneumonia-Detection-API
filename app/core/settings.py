@@ -6,6 +6,8 @@ import logging
 import os
 from typing import List, Optional, Union
 
+from ..version import CURRENT_API_VERSION
+
 logger = logging.getLogger(__name__)
 
 try:
@@ -20,7 +22,7 @@ class Settings(BaseSettings):
 
     # Application
     app_name: str = "Pneumonia Detection API"
-    app_version: str = "3.5.1"
+    app_version: str = CURRENT_API_VERSION
     debug: bool = False
 
     # Server
