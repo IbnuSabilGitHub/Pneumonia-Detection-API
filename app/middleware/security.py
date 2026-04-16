@@ -1,9 +1,11 @@
 """
 Custom middleware for security and logging with in-memory storage support.
+Supports both IP-based rate limiting (legacy) and JWT user-based rate limiting.
 """
 
 import os
 import time
+from typing import Optional
 
 from fastapi import HTTPException, Request, status
 from fastapi.responses import JSONResponse
@@ -129,7 +131,97 @@ class SecurityMiddleware(BaseHTTPMiddleware):
     async def _check_rate_limit(
         self, client_ip: str, endpoint: str, request, file_hash: str
     ) -> dict:
-        """Check rate limiting and return result."""
+        """Check rate limiting and return result.
+        
+        Uses user-based rate limiting if JWT auth is enabled,
+        otherwise falls back to IP-based rate limiting.
+        """
+        # Try user-based rate limiting first if JWT auth is enabled
+        if settings.jwt_auth_enabled and settings.user_rate_limiting_enabled:
+            result = await self._check_user_rate_limit(request)
+            if result:
+                return result
+        
+        # Fall back to IP-based rate limiting
+        return await self._check_ip_rate_limit(client_ip, endpoint, request, file_hash)
+
+    def _extract_user_id_from_request(self, request: Request) -> Optional[str]:
+        """Extract user_id from JWT token in Authorization header."""
+        try:
+            auth_header = request.headers.get("Authorization", "")
+            if not auth_header.startswith("Bearer "):
+                return None
+            
+            token = auth_header[7:]  # Remove "Bearer " prefix
+            
+            # Import JWT utilities
+            from ..utils.jwt_auth import verify_jwt_token
+            
+            payload = verify_jwt_token(token)
+            if payload:
+                return payload.user_id
+            return None
+        except Exception as e:
+            self.logger.debug(f"Failed to extract user_id from JWT: {e}")
+            return None
+
+    async def _check_user_rate_limit(self, request: Request) -> Optional[dict]:
+        """Check user-based rate limiting using JWT identity.
+        
+        Returns:
+            dict with rate limit result if user authenticated, None otherwise.
+        """
+        user_id = self._extract_user_id_from_request(request)
+        if not user_id:
+            # No valid JWT, skip user rate limiting (will fall back to IP-based)
+            return None
+        
+        try:
+            from ..core.user_rate_limiting import get_user_rate_limiter
+            
+            user_rate_limiter = get_user_rate_limiter()
+            if not user_rate_limiter:
+                self.logger.debug("User rate limiter not initialized")
+                return None
+            
+            # Check user rate limit
+            rate_info = await user_rate_limiter.check_rate_limit(user_id)
+            
+            if rate_info.allowed:
+                # Store rate info in request state for later header addition
+                request.state.user_rate_info = rate_info
+                return {
+                    "allowed": True,
+                    "reason": "User rate limit OK",
+                    "details": {
+                        "user_id": user_id[:8] + "...",
+                        "requests_made": rate_info.requests_made,
+                        "requests_limit": rate_info.requests_limit,
+                        "requests_remaining": rate_info.requests_remaining,
+                    },
+                }
+            else:
+                return {
+                    "allowed": False,
+                    "reason": f"User rate limit exceeded ({rate_info.requests_made}/{rate_info.requests_limit})",
+                    "details": {
+                        "user_id": user_id[:8] + "...",
+                        "requests_made": rate_info.requests_made,
+                        "requests_limit": rate_info.requests_limit,
+                        "window_size": rate_info.window_size,
+                        "retry_after": rate_info.retry_after,
+                        "rate_info": rate_info,
+                    },
+                }
+        
+        except Exception as e:
+            self.logger.error(f"User rate limit check failed: {e}")
+            return None  # Fall back to IP-based
+
+    async def _check_ip_rate_limit(
+        self, client_ip: str, endpoint: str, request, file_hash: str
+    ) -> dict:
+        """Check IP-based rate limiting (legacy method)."""
         # Import at runtime to get the latest reference
         from ..core.advanced_rate_limiting import get_rate_limiter
 
@@ -200,8 +292,39 @@ class SecurityMiddleware(BaseHTTPMiddleware):
             "client_ip": client_ip,
             "endpoint": endpoint,
             "timestamp": time.time(),
-            "details": details,
+            "details": {
+                k: v for k, v in details.items() 
+                if k != "rate_info"  # Don't include full rate_info object
+            },
         }
+
+        # Check if this is a user-based rate limit response
+        if "rate_info" in details:
+            rate_info = details["rate_info"]
+            window_size = rate_info.window_size
+            retry_after = rate_info.retry_after
+            limit_info = f"{rate_info.requests_limit} per {window_size}s"
+            remaining = 0
+            
+            cors_headers = {
+                "Access-Control-Allow-Origin": "*",
+                "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+                "Access-Control-Allow-Headers": "*",
+                "Access-Control-Allow-Credentials": "true",
+                "Content-Type": "application/json",
+                "Retry-After": str(retry_after),
+                "X-RateLimit-Limit": limit_info,
+                "X-RateLimit-Remaining": str(remaining),
+                "X-RateLimit-Reset": str(int(rate_info.reset_time)),
+                "X-RateLimit-Window": str(window_size),
+                "X-RateLimit-Type": "user",
+            }
+            
+            return JSONResponse(
+                status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+                content=error_detail,
+                headers=cors_headers,
+            )
 
         # Extract rate limiting information from details (handle different formats)
         if isinstance(details, dict):
@@ -257,6 +380,17 @@ class SecurityMiddleware(BaseHTTPMiddleware):
     async def _add_rate_limit_headers(self, response, client_ip: str, request) -> None:
         """Add rate limiting headers to successful responses."""
         try:
+            # Check for user rate limit info first (JWT auth)
+            if hasattr(request.state, "user_rate_info"):
+                rate_info = request.state.user_rate_info
+                response.headers["X-RateLimit-Limit"] = f"{rate_info.requests_limit} per {rate_info.window_size}s"
+                response.headers["X-RateLimit-Remaining"] = str(rate_info.requests_remaining)
+                response.headers["X-RateLimit-Reset"] = str(int(rate_info.reset_time))
+                response.headers["X-RateLimit-Window"] = str(rate_info.window_size)
+                response.headers["X-RateLimit-Type"] = "user"
+                return
+
+            # Fall back to IP-based rate limit headers
             # Import at runtime to get the latest reference
             from ..core.advanced_rate_limiting import get_rate_limiter
 
@@ -362,14 +496,25 @@ async def error_handling_middleware(request: Request, call_next):
     Returns:
         Response or error response
     """
+    # Debug specific paths
+    if "/pneumonia/model/info" in request.url.path:
+        print(f"[DEBUG] Processing model/info request", flush=True)
+    
     try:
         response = await call_next(request)
         return response
-    except HTTPException:
-        # Re-raise HTTP exceptions (they're handled by FastAPI)
+    except HTTPException as e:
+        # Re-raise HTTP exceptions (they're handled by FastAPI)  
+        if "/pneumonia/model/info" in request.url.path:
+            print(f"[DEBUG] HTTPException: {e}", flush=True)
         raise
     except Exception as e:
-        # Log unexpected errors
+        # Log unexpected errors with debug info
+        import sys
+        import traceback
+        error_msg = f"Unexpected error in {request.url.path}: {type(e).__name__}: {e}"
+        print(f"[DEBUG] {error_msg}", file=sys.stderr, flush=True)
+        traceback.print_exc(file=sys.stderr)
         logger.error("Unexpected error: %s", e, exc_info=True)
 
         return JSONResponse(

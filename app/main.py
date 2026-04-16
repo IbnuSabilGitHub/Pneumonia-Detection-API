@@ -9,13 +9,13 @@ import uvicorn
 from fastapi import FastAPI
 from fastapi.responses import JSONResponse
 
-from .api import health, model_info, prediction, stats, status
-from .core.advanced_rate_limiting import set_rate_limiter
+from .api import health, model_info, prediction
 from .core.dependencies import get_dependencies
 from .core.logger import get_logger, setup_logging
 from .core.middleware_factory import MiddlewareFactory
 from .core.settings import settings
 from .core.startup_manager import StartupManager
+from .core.user_rate_limiting import set_user_rate_limiter
 from .docs.sections.api_metadata import ApiMetadata
 from .openapi import custom_openapi
 from .utils.security import file_hash_cache
@@ -39,9 +39,12 @@ async def lifespan(_: FastAPI):
     startup_manager = StartupManager()
     dependencies = get_dependencies()
 
+    # Get user rate limiting config (JWT auth is always enabled)
+    user_rate_config = settings.get_user_rate_limiting_config()
+
     # Initialize services using startup manager
     startup_result = await startup_manager.startup(
-        storage_config=settings.get_storage_config()
+        user_rate_config=user_rate_config
     )
 
     # Inject dependencies
@@ -53,11 +56,10 @@ async def lifespan(_: FastAPI):
             "prediction"
         ]
 
-    if "rate_limiter" in startup_result["services"]:
-        dependencies.rate_limiter = startup_result["services"]["rate_limiter"]
-        # Also set in legacy global for backward compatibility
-
-        set_rate_limiter(startup_result["services"]["rate_limiter"])
+    if "user_rate_limiter" in startup_result["services"]:
+        dependencies.user_rate_limiter = startup_result["services"]["user_rate_limiter"]
+        # Also set global for middleware access
+        set_user_rate_limiter(startup_result["services"]["user_rate_limiter"])
 
     # Mark dependencies as initialized
     dependencies.mark_initialized()
@@ -150,8 +152,6 @@ def create_app() -> FastAPI:
     app_instance.include_router(health.router)
     app_instance.include_router(prediction.router, prefix="/pneumonia")
     app_instance.include_router(model_info.router, prefix="/pneumonia")
-    app_instance.include_router(status.router, prefix="/security")
-    app_instance.include_router(stats.router, prefix="/security")
 
     # Setup global exception handlers
     _setup_exception_handlers(app_instance)

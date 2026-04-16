@@ -1,40 +1,24 @@
 """
-Compatibility layer for advanced rate limiting.
-
-This module provides backward compatibility by re-exporting functions
-from the rate_limiting package and dependencies module.
+Backward compatibility shim for advanced rate limiting.
+The advanced rate limiting functionality has been refactored.
+This module provides compatibility for existing code.
 """
 
-from typing import Optional
+from ..core.logger import get_logger
 
-from .dependencies import get_dependencies
-from .rate_limiting import AdvancedRateLimiter
-from .rate_limiting.api import create_advanced_rate_limiter
-
-__all__ = [
-    "AdvancedRateLimiter",
-    "create_advanced_rate_limiter",
-    "get_rate_limiter",
-    "set_rate_limiter",
-]
+logger = get_logger(__name__)
 
 
-def get_rate_limiter() -> Optional[AdvancedRateLimiter]:
+def get_rate_limiter():
     """
-    Get the global rate limiter instance.
-
+    Get the advanced rate limiter instance.
+    
+    This is a backward compatibility function.
+    The actual rate limiting is now handled by the middleware
+    and user rate limiting systems.
+    
     Returns:
-        Optional[AdvancedRateLimiter]: The rate limiter instance if initialized,
-            None otherwise.
+        A mock rate limiter object or None
     """
-    return get_dependencies().rate_limiter
-
-
-def set_rate_limiter(rate_limiter: AdvancedRateLimiter) -> None:
-    """
-    Set the global rate limiter instance.
-
-    Args:
-        rate_limiter: The rate limiter instance to set globally.
-    """
-    get_dependencies().rate_limiter = rate_limiter
+    logger.debug("get_rate_limiter() called - using compatibility shim")
+    return None

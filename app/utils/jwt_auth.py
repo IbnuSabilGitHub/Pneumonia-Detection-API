@@ -275,16 +275,6 @@ async def get_current_user(
     Raises:
         HTTPException 401: Missing or invalid token.
     """
-    if not settings.jwt_auth_enabled:
-        raise HTTPException(
-            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail={
-                "error": "JWT authentication disabled",
-                "error_code": "AUTH_DISABLED",
-                "message": "JWT authentication is not enabled on this instance.",
-            },
-        )
-
     if credentials is None:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -312,7 +302,7 @@ async def get_optional_user(
     Returns ``None`` when no token is present (instead of raising 401).
     Useful for endpoints that behave differently for authenticated users.
     """
-    if not settings.jwt_auth_enabled or credentials is None:
+    if credentials is None:
         return None
 
     payload = _decode_token(credentials.credentials)
@@ -366,7 +356,7 @@ async def verify_admin_jwt_or_api_key(
              (user-id for JWT, ``"api_key"`` for legacy key).
     """
     # --- Attempt 1: JWT Bearer token ---
-    if settings.jwt_auth_enabled and credentials is not None:
+    if credentials is not None:
         try:
             payload = _decode_token(credentials.credentials)
             user = JWTPayload(payload)

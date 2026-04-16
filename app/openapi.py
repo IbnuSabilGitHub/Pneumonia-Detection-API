@@ -8,8 +8,7 @@ from .core.settings import settings
 
 def custom_openapi(app):
     """Generate a custom OpenAPI schema for the FastAPI application."""
-    if app.openapi_schema:
-        return app.openapi_schema
+    # Don't cache if routes have changed - regenerate schema each time
     schema = get_openapi(
         title="Pneumonia Detection API",
         version=settings.app_version,

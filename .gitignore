@@ -145,6 +145,13 @@ railway.toml
 *.tmp
 *.temp
 
+# Node / Next.js
+node_modules/
+.next/
+frontend-bento/.next/
+frontend-bento/node_modules/
+frontend-bento/.turbo/
+
 # Model files (if too large)
 # models/*.onnx
 # models/*.pkl

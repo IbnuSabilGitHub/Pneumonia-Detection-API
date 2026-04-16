@@ -133,27 +133,19 @@ curl -X PUT "https://<project>.supabase.co/auth/v1/admin/users/<user_id>" \
 ### Minimal (Wajib)
 
 ```bash
-# Aktifkan JWT authentication
-JWT_AUTH_ENABLED=true
+# JWT authentication selalu aktif (native)
 
-# Supabase JWT Secret (dari Settings -> API -> JWT Secret)
-SUPABASE_JWT_SECRET=your-supabase-jwt-secret-here
+# Supabase Project URL
+SUPABASE_URL=https://your-project.supabase.co
 ```
 
 ### Lengkap (Semua Opsi)
 
 ```bash
-# JWT Authentication Configuration
+# JWT Authentication Configuration (Always Enabled)
 
-# Master toggle — set true untuk mengaktifkan JWT auth
-JWT_AUTH_ENABLED=true
-
-# Supabase project URL (opsional, untuk referensi)
+# Supabase project URL (WAJIB)
 SUPABASE_URL=https://your-project.supabase.co
-
-# JWT Secret (WAJIB jika JWT_AUTH_ENABLED=true)
-# Ambil dari: Supabase Dashboard -> Settings -> API -> JWT Secret
-SUPABASE_JWT_SECRET=your-supabase-jwt-secret-here
 
 # Supabase anon key (opsional, untuk referensi client-side)
 SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIs...
@@ -177,10 +169,8 @@ APP_VERSION=3.5.1
 DEBUG=false
 PORT=8000
 
-# JWT Auth (Supabase)
-JWT_AUTH_ENABLED=true
+# JWT Auth (Supabase) - Always Enabled
 SUPABASE_URL=https://abcdefg.supabase.co
-SUPABASE_JWT_SECRET=super-secret-jwt-token-with-at-least-32-characters-long
 JWT_ALGORITHM=ES256
 
 # Admin (legacy + JWT)
@@ -642,12 +632,11 @@ Prediction OK | user=a1b2c3d4-... ip=127.0.0.1 file=xray.jpg ...
 ### JWT Auth Tidak Bekerja
 
 ```bash
-# Cek apakah JWT_AUTH_ENABLED=true
+# Cek JWT auth status (always enabled)
 curl http://localhost:8000/health | jq
 
 # Cek log startup
 # Harus muncul: "JWT auth enabled: True"
-# Harus muncul: "Supabase JWT secret: configured"
 ```
 
 ### Token Selalu Invalid
@@ -708,8 +697,8 @@ curl -H "X-Admin-API-Key: my-secret-key" http://localhost:8000/security/status
 **Sesudah** (JWT + API key — backward compatible):
 ```bash
 # Tambahkan JWT config
-JWT_AUTH_ENABLED=true
-SUPABASE_JWT_SECRET=your-jwt-secret
+# JWT auth always enabled
+SUPABASE_URL=https://your-project.supabase.co
 
 # API key masih berfungsi!
 ADMIN_API_KEY=my-secret-key
@@ -745,9 +734,7 @@ Jika perlu menonaktifkan JWT authentication:
 JWT_AUTH_ENABLED=false
 ```
 
-Ketika `JWT_AUTH_ENABLED=false`:
-- `/pneumonia/predict` -> return 503 AUTH_DISABLED
-- `/security/*` -> fallback ke API key only
+**Note**: JWT authentication is always enabled. The `/pneumonia/predict` endpoint always requires a valid JWT token.
 
 ---
 

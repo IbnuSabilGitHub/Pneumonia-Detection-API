@@ -289,34 +289,23 @@ DEBUG=false
 HOST=0.0.0.0
 PORT=8000
 
-# JWT Authentication (Supabase)
-JWT_AUTH_ENABLED=true                   # Master toggle for JWT auth
+# JWT Authentication (Supabase) - Always Enabled
 SUPABASE_URL=https://your-project.supabase.co
-SUPABASE_JWT_SECRET=your-jwt-secret     # Settings → API → JWT Secret
-SUPABASE_ANON_KEY=your-anon-key         # Optional, for reference
-JWT_ALGORITHM=HS256                     # Default Supabase algorithm
 SUPABASE_JWT_VERIFY_AUDIENCE=true       # Verify 'aud' claim
 
-# Admin Security (for /stats and /status endpoints)
-# Supports BOTH JWT admin role AND legacy API key
+# Admin Security
 # Generate with: openssl rand -hex 32
 ADMIN_API_KEY=your-secure-admin-api-key-here
 ENABLE_PUBLIC_STATS=false    # NOT RECOMMENDED for production
 ENABLE_PUBLIC_STATUS=false   # NOT RECOMMENDED for production
 
-# Storage Backend (default: memory)
-STORAGE_BACKEND=memory   # Options: memory | redis
+# User-Based Rate Limiting (per JWT user)
+USER_RATE_LIMITING_ENABLED=true
+USER_RATE_LIMIT_MAX_REQUESTS=100        # Per user per hour
+USER_RATE_LIMIT_WINDOW_SECONDS=3600     # 1 hour window
 
-# Basic Rate Limiting (production defaults)
-MAX_REQUESTS_PER_IP=100                 # Per 5-minute window
-MAX_FINGERPRINT_REQUESTS=50             # Per fingerprint per window
-RATE_LIMIT_WINDOW_SIZE=300              # 5 minutes
-
-# Advanced Rate Limiting
-ADVANCED_RATE_LIMITING_ENABLED=true
-IP_SWITCHING_THRESHOLD=5                # Same fingerprint from N+ IPs
-SUSPICIOUS_IP_CHANGES_THRESHOLD=10      # Distributed attack threshold
-GLOBAL_ATTACK_THRESHOLD="0.7"          # Attack score (0.0-1.0)
+# Prediction Settings
+PREDICTION_CONCURRENCY_LIMIT=3
 
 # Block Durations (seconds)
 ATTACK_BLOCK_DURATION=300               # 5 minutes

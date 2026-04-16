@@ -54,54 +54,6 @@ PREDICTION_CONCURRENCY_LIMIT = int(
 # Simple in-process semaphore for concurrency limiting (per instance)
 _prediction_semaphore = asyncio.Semaphore(PREDICTION_CONCURRENCY_LIMIT)
 
-# Endpoint specific quota per IP (default lower than global). Example: 20 per 5m
-PREDICTION_IP_WINDOW = int(
-    __import__("os").environ.get(
-        "PREDICTION_RATE_WINDOW", settings.rate_limit_window_size
-    )
-)
-PREDICTION_IP_LIMIT = int(
-    __import__("os").environ.get("PREDICTION_MAX_REQUESTS_PER_IP", 20)
-)
-
-
-async def _check_prediction_endpoint_quota(
-    request: Request, client_ip: str
-) -> tuple[bool, int, int]:
-    """Per-endpoint lightweight quota (independent from global limiter).
-
-    Uses the shared storage backend if available via rate limiter; else best-effort in-memory fallback attached to app.state.
-    Returns (allowed, current_count, limit).
-    """
-    try:
-        from ..core.advanced_rate_limiting import get_rate_limiter  # local import
-
-        rl = get_rate_limiter()
-        key = f"pred_ep:{client_ip}"
-        window = PREDICTION_IP_WINDOW
-
-        if rl and rl.storage:  # Use storage for multi-process consistency
-            # increment with ttl
-            await rl.storage.increment(key, 1, window)
-            count = await rl.storage.get(key) or 0
-        else:
-            # Fallback: in-memory dict on app.state
-            state_key = "_predict_ep_counts"
-            if not hasattr(request.app.state, state_key):
-                setattr(request.app.state, state_key, {})
-            store: dict = getattr(request.app.state, state_key)
-            now = time.time()
-            entry = store.get(client_ip)
-            if not entry or now > entry["expires_at"]:
-                entry = {"count": 0, "expires_at": now + window}
-            entry["count"] += 1
-            store[client_ip] = entry
-            count = entry["count"]
-        return (count <= PREDICTION_IP_LIMIT, count, PREDICTION_IP_LIMIT)
-    except Exception as e:
-        logger.debug(f"Prediction endpoint quota check failed: {e}")
-        return (True, 0, PREDICTION_IP_LIMIT)
-
 
 @router.post(
     "/predict",
@@ -133,8 +85,8 @@ async def predict_pneumonia(
     5. **Medical Guidance**: Contextual recommendations
 
     **Security Features:**
-    - **JWT Authentication** (Supabase Bearer token required)
-    - Rate limiting (5 requests/minute per IP)
+    - **JWT Authentication** (Supabase Bearer token REQUIRED)
+    - **User Rate Limiting** (100 requests/hour per authenticated user)
     - Duplicate detection and prevention
     - Comprehensive request logging
     - Multi-layer input validation
@@ -160,33 +112,6 @@ async def predict_pneumonia(
         healthcare professionals for medical diagnosis and treatment.
     """
     client_ip = get_client_ip(request)
-
-    # Endpoint-specific early quota (lightweight) BEFORE heavy reads
-    allowed_ep, ep_count, ep_limit = await _check_prediction_endpoint_quota(
-        request, client_ip
-    )
-    if not allowed_ep:
-        reset_ts = int(time.time() + PREDICTION_IP_WINDOW)
-        return JSONResponse(
-            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
-            content={
-                "detail": "Prediction endpoint rate limit exceeded",
-                "error_code": ErrorCode.RATE_LIMIT_EXCEEDED,
-                "endpoint": "/pneumonia/predict",
-                "ip": client_ip,
-                "requests_in_window": ep_count,
-                "limit": ep_limit,
-                "window_seconds": PREDICTION_IP_WINDOW,
-                "reset": reset_ts,
-                "advice": "Reduce request frequency or batch client-side.",
-            },
-            headers={
-                "Retry-After": str(PREDICTION_IP_WINDOW),
-                "X-RateLimit-Limit-Predict": str(ep_limit),
-                "X-RateLimit-Remaining-Predict": str(max(0, ep_limit - ep_count)),
-                "X-RateLimit-Reset-Predict": str(reset_ts),
-            },
-        )
 
     # Validate prediction service is available
     if not prediction_service or not prediction_service.is_loaded():

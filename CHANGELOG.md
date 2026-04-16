@@ -1,5 +1,77 @@
 # Changelog
 
+## [3.8.0] - 2026-04-17 - Simplify to JWT-Based User Rate Limiting
+
+### 🔄 Major Architectural Refactoring
+- **REMOVED**: Complete IP/fingerprint-based advanced rate limiting system
+  - Deleted entire `app/core/rate_limiting/` module (1,350+ lines)
+  - Removed `memory_storage.py`, `storage_backends.py`, `storage_factory.py`
+  - Eliminated complex attack detection and behavioral analysis
+  - Simplified from 3-tier storage (memory/redis/database) to single approach
+
+- **REMOVED**: Admin endpoints completely
+  - Deleted `app/api/stats.py` endpoint
+  - Deleted `app/api/status.py` endpoint
+  - Removed related documentation sections
+
+### ✨ New JWT-Based User Rate Limiting
+- **IMPLEMENTED**: Per-user rate limiting using JWT identity (Supabase `sub` claim)
+  - New module: `app/core/user_rate_limiting.py`
+  - Tracks requests per authenticated user (not per IP)
+  - Stores counters in Supabase via REST API
+  - Graceful fallback to in-memory storage if Supabase unavailable
+  - Sliding window algorithm with configurable window size (default: 1 hour)
+
+- **CONFIGURATION**: New rate limiting settings in `settings.py`
+  - `user_rate_limiting_enabled`: Toggle user-based rate limiting (default: true)
+  - `user_rate_limit_max_requests`: Max requests per user per window (default: 100)
+  - `user_rate_limit_window_size`: Time window in seconds (default: 3600)
+
+### 🛠️ Architecture Simplification
+- **SIMPLIFIED**: Removed 2,886+ lines of complex code
+- **FOCUSED**: Single responsibility - authenticate user via JWT, apply per-user limits
+- **SCALABLE**: Per-user approach better for multi-user SaaS deployments
+- **CLEANER**: Reduced dependencies and configuration complexity
+
+### 🔐 Security Impact
+- **REMOVED**: IP switching attack detection (no longer needed - uses JWT identity)
+- **REMOVED**: Fingerprinting and behavioral analysis (complex and unreliable)
+- **IMPROVED**: Trust JWT as source of truth for user identity
+- **SIMPLIFIED**: Fewer moving parts = smaller attack surface
+
+### 📝 Documentation
+- **NEW**: `doc/USER_RATE_LIMITING_GUIDE.md` - Complete user rate limiting documentation
+- **NEW**: `doc/SUPABASE_RATE_LIMITS_TABLE.sql` - Supabase table schema for rate limits
+- **UPDATED**: `doc/SUPABASE_JWT_AUTH.md` - Integrated JWT + rate limiting flow
+
+### ⚠️ Breaking Changes
+1. **Removed**: `/stats` endpoint - No longer available
+2. **Removed**: `/status` endpoint - No longer available  
+3. **Changed**: Rate limiting is now per-user (authenticated), not per-IP
+4. **Changed**: No more support for unauthenticated rate limiting
+5. **Removed**: All IP-based, fingerprint-based, and behavioral detection features
+
+### 📊 Impact
+- **Reduced Complexity**: -2,886 lines of code
+- **Faster Initialization**: Removed complex storage initialization logic
+- **Lower Memory**: No need for in-memory counters for all IPs
+- **Better for SaaS**: Per-user limits align with multi-tenant architecture
+- **Clearer Intent**: Rate limiting now directly tied to user identity (JWT)
+
+### 🔗 Migration Guide
+**For existing clients:**
+- Update monitoring to use `/health` endpoint instead of `/stats`/`/status`
+- Switch from IP-based rate limiting to per-user limits
+- Ensure users are authenticated via JWT for rate limiting to apply
+- Update rate limit headers: now uses `X-RateLimit-User-ID` instead of IP-based headers
+
+### 🛡️ Updated Endpoints
+- `POST /pneumonia/predict` - Still requires JWT, now with per-user rate limiting
+- `GET /health` - Still available for basic health checks
+- `/docs` and `/redoc` - Updated documentation (stats/status removed)
+
+---
+
 ## [3.7.1] - 2026-03-09 - Remove X-Admin-API-Key Authentication
 
 ###  Breaking Changes

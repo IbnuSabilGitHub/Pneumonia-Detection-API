@@ -6,7 +6,7 @@ from functools import lru_cache
 from typing import Dict, Optional
 
 from ..services.prediction import PneumoniaPredictionService
-from .rate_limiting import AdvancedRateLimiter
+from .user_rate_limiting import UserRateLimiter
 from .logger import get_logger
 
 logger = get_logger(__name__)
@@ -21,7 +21,7 @@ class AppDependencies:
 
     def __init__(self):
         self._prediction_service: Optional[PneumoniaPredictionService] = None
-        self._rate_limiter: Optional[AdvancedRateLimiter] = None
+        self._user_rate_limiter: Optional[UserRateLimiter] = None
         self._initialized = False
 
     @property
@@ -43,25 +43,28 @@ class AppDependencies:
         self._prediction_service = service
         logger.debug("Prediction service injected into dependencies")
 
+
+
+
+
     @property
-    def rate_limiter(self) -> Optional[AdvancedRateLimiter]:
-        """Get the rate limiter instance
+    def user_rate_limiter(self) -> Optional[UserRateLimiter]:
+        """Get the user-based rate limiter instance (JWT auth)
 
         Returns:
-            Optional[AdvancedRateLimiter]: The rate limiter if set, else None.
-
+            Optional[UserRateLimiter]: The user rate limiter if set, else None.
         """
-        return self._rate_limiter
+        return self._user_rate_limiter
 
-    @rate_limiter.setter
-    def rate_limiter(self, limiter: AdvancedRateLimiter):
-        """Set the rate limiter instance
+    @user_rate_limiter.setter
+    def user_rate_limiter(self, limiter: UserRateLimiter):
+        """Set the user-based rate limiter instance (JWT auth)
 
         Args:
-            limiter (AdvancedRateLimiter): The rate limiter instance to set.
+            limiter (UserRateLimiter): The user rate limiter instance to set.
         """
-        self._rate_limiter = limiter
-        logger.debug("Rate limiter injected into dependencies")
+        self._user_rate_limiter = limiter
+        logger.debug("User rate limiter injected into dependencies")
 
     @property
     def is_initialized(self) -> bool:
@@ -82,12 +85,13 @@ class AppDependencies:
 
         Returns:
             Dict[str, bool]: Dictionary containing service availability status.
-                Keys: 'prediction_service', 'rate_limiter', 'initialized'
+                Keys: 'prediction_service', 'rate_limiter', 'user_rate_limiter', 'initialized'
                 Values: Boolean indicating if service is available/initialized
         """
         return {
             "prediction_service": self._prediction_service is not None,
             "rate_limiter": self._rate_limiter is not None,
+            "user_rate_limiter": self._user_rate_limiter is not None,
             "initialized": self._initialized,
         }
 
@@ -113,11 +117,14 @@ def get_prediction_service() -> Optional[PneumoniaPredictionService]:
     return get_dependencies().prediction_service
 
 
-def get_rate_limiter() -> Optional[AdvancedRateLimiter]:
-    """Get rate limiter from dependencies.
+
+
+
+def get_user_rate_limiter() -> Optional[UserRateLimiter]:
+    """Get user-based rate limiter from dependencies (JWT auth).
 
     Returns:
-        Optional[AdvancedRateLimiter]: The rate limiter instance
+        Optional[UserRateLimiter]: The user rate limiter instance
             if it has been injected, None otherwise.
     """
-    return get_dependencies().rate_limiter
+    return get_dependencies().user_rate_limiter

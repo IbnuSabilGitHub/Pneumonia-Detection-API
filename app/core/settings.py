@@ -38,11 +38,17 @@ class Settings(BaseSettings):
     enable_public_stats: bool = False  # Set to True to allow unauthenticated access to /stats
     enable_public_status: bool = False  # Set to True to allow unauthenticated access to /status
 
-    # Supabase JWT Authentication (ES256 only)
-    jwt_auth_enabled: bool = False  # Master toggle for JWT authentication
+    # Supabase JWT Authentication (ES256 only) - Always Enabled
+    jwt_auth_enabled: bool = True  # JWT authentication always active (native)
     supabase_url: Optional[str] = None  # Supabase project URL (e.g. https://<project>.supabase.co) - REQUIRED for JWKS endpoint
     supabase_anon_key: Optional[str] = None  # Supabase anon key (optional, for client-side reference)
     supabase_jwt_verify_audience: bool = True  # Verify 'aud' claim in JWT (default: authenticated)
+    
+    # User-based Rate Limiting (JWT identity-based)
+    user_rate_limiting_enabled: bool = True  # Enable per-user rate limiting
+    user_rate_limit_max_requests: int = 100  # Max requests per user per window
+    user_rate_limit_window_size: int = 3600  # Window size in seconds (1 hour default)
+    user_rate_limit_use_supabase: bool = True  # Use Supabase for storage (falls back to memory)
 
     # File Upload
     max_file_size: int = 10 * 1024 * 1024  # 10 MB
@@ -56,7 +62,6 @@ class Settings(BaseSettings):
     model_stats_path_efficientnet_b0: str = "models/model_stats_efficientnet_b0.json"
 
     # Advanced Rate Limiting - Main Settings
-    advanced_rate_limiting_enabled: bool = True
 
     # Rate limiting path to be excluded
     excluded_paths: Union[List[str], str] = [
@@ -67,39 +72,8 @@ class Settings(BaseSettings):
         "/openapi.json",
     ]
 
-    # Basic Rate Limiting - Standard Production Settings
-    max_requests_per_ip: int = 100  # Reasonable limit for free tier
-    max_fingerprint_requests: int = 50  # Conservative fingerprint limit
-    rate_limit_window_size: int = 300  # 5 minute window
-
-    # Attack Detection Thresholds - Production Settings
-    ip_switching_threshold: int = 5  # Same fingerprint from 5+ IPs triggers detection
-    suspicious_ip_changes_threshold: int = 10  # Distributed attack threshold
-    global_attack_threshold: float = 0.7  # Attack score threshold
-    bot_behavior_variance: float = 0.1  # Request timing variance threshold
-
-    # Block Durations - Standard Production Settings
-    attack_block_duration: int = 300  # 5 minutes block duration
-    fingerprint_block_duration: int = 600  # 10 minutes for fingerprint blocks
-
-    # Attack Detection Windows - Production Settings
-    ip_switching_detection_window: int = 300  # 5 minutes
-    behavioral_analysis_window: int = 600  # 10 minutes
-    global_attack_score_window: int = 900  # 15 minutes
-
-    # Attack Detection Limits - Production Settings
-    coordinated_attack_threshold: int = 3  # Same file from 3+ IPs triggers detection
-    bot_timing_threshold: float = 2.0  # Minimum 2 seconds between requests
-
-    # In-Memory Limits (optimized for free tier memory constraints)
-    max_recent_ips: int = 1000  # Reasonable IP tracking limit
-    max_request_patterns_per_ip: int = 50  # Pattern tracking limit
-    max_file_hash_requests: int = 500  # File hash tracking limit
-    max_global_request_rate: int = 500  # Global rate limit per window
-    max_fingerprints_per_ip: int = 10  # Fingerprint limit per IP
-
-    # Rate Limiting Reduction Factor - Aggressive for production
-    attack_reduction_factor: float = 0.5  # Reduce limits by 50% during attacks
+    # Prediction Concurrency Control
+    prediction_concurrency_limit: int = 3  # Max concurrent predictions
 
     # Storage Backend Configuration
     storage_backend: str = "memory"  # Options: memory, database
@@ -180,9 +154,6 @@ class Settings(BaseSettings):
 
         # Debug logging untuk melihat dari mana values dibaca
         logger.info("🔧 Configuration loaded successfully")
-        logger.info(f"Rate limiting enabled: {self.advanced_rate_limiting_enabled}")
-        logger.info(f"Max requests per IP: {self.max_requests_per_ip}")
-        logger.info(f"Attack block duration: {self.attack_block_duration} seconds")
         logger.info(f"Trusted hosts: {self.trusted_hosts}")
         logger.info(f"Storage backend: {self.storage_backend}")
         logger.info(f"JWT auth enabled: {self.jwt_auth_enabled}")
@@ -190,6 +161,9 @@ class Settings(BaseSettings):
             logger.info(f"Supabase URL: {self.supabase_url or 'NOT SET - REQUIRED'}")
             logger.info(f"JWT algorithm: ES256 (Supabase standard)")
             logger.info(f"Verify audience: {self.supabase_jwt_verify_audience}")
+            logger.info(f"User rate limiting: {self.user_rate_limiting_enabled}")
+            logger.info(f"Max requests per user: {self.user_rate_limit_max_requests}/{self.user_rate_limit_window_size}s")
+            logger.info(f"Use Supabase storage: {self.user_rate_limit_use_supabase}")
         logger.info(f"Logging enabled: {self.log_enabled}")
         logger.info(
             "Log inclusions — timestamp: %s, level: %s, name: %s, module: %s, process: %s, thread: %s, filename: %s, line: %s",
@@ -277,9 +251,7 @@ class Settings(BaseSettings):
         """Get comprehensive rate limiting configuration."""
         return {
             # Basic Rate Limiting
-            "enabled": self.advanced_rate_limiting_enabled,
             "excluded_paths": self.excluded_paths,
-            "max_requests_per_ip": self.max_requests_per_ip,
             "max_fingerprint_requests": self.max_fingerprint_requests,
             "window_size": self.rate_limit_window_size,
             # Attack Detection Thresholds
@@ -288,7 +260,6 @@ class Settings(BaseSettings):
             "global_attack_threshold": self.global_attack_threshold,
             "bot_behavior_variance": self.bot_behavior_variance,
             # Block Durations
-            "attack_block_duration": self.attack_block_duration,
             "fingerprint_block_duration": self.fingerprint_block_duration,
             # Detection Windows
             "ip_switching_detection_window": self.ip_switching_detection_window,
@@ -305,6 +276,18 @@ class Settings(BaseSettings):
             "max_fingerprints_per_ip": self.max_fingerprints_per_ip,
             # Reduction Factor
             "attack_reduction_factor": self.attack_reduction_factor,
+        }
+
+    def get_user_rate_limiting_config(self) -> dict:
+        """Get user-based rate limiting configuration for JWT auth."""
+        return {
+            "enabled": self.user_rate_limiting_enabled,
+            "max_requests": self.user_rate_limit_max_requests,
+            "window_size": self.user_rate_limit_window_size,
+            "use_supabase": self.user_rate_limit_use_supabase,
+            "supabase_url": self.supabase_url,
+            "supabase_key": self.supabase_anon_key,
+            "excluded_paths": self.excluded_paths,
         }
 
 

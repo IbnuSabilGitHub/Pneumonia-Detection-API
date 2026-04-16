@@ -6,9 +6,8 @@ import asyncio
 from typing import Any, Dict, List, Optional, Union
 
 from ..services.prediction import PneumoniaPredictionService
-from .rate_limiting.api import create_advanced_rate_limiter
+from .user_rate_limiting import create_user_rate_limiter, UserRateLimiter
 from .logger import get_logger
-from .storage_factory import StorageType
 
 logger = get_logger(__name__)
 
@@ -51,70 +50,60 @@ class StartupManager:
             self.startup_errors.append(error_msg)
             return False
 
-    async def initialize_rate_limiter(self, storage_config: Dict[str, Any]) -> bool:
+    # initialize_rate_limiter removed - using user_rate_limiter only
+
+    async def initialize_user_rate_limiter(
+        self, 
+        user_rate_config: Dict[str, Any]
+    ) -> bool:
         """
-        Initialize rate limiter with fallback to memory storage.
+        Initialize user-based rate limiter for JWT authentication.
 
         Args:
-            storage_config (Dict[str, Any]): Storage configuration dictionary
-                containing backend-specific settings like connection parameters,
-                max_size, timeout settings, etc.
+            user_rate_config (Dict[str, Any]): User rate limiting configuration containing:
+                - enabled: Whether user rate limiting is enabled
+                - max_requests: Max requests per user per window
+                - window_size: Window size in seconds
+                - use_supabase: Whether to use Supabase storage
+                - supabase_url: Supabase project URL
+                - supabase_key: Supabase API key
 
         Returns:
-            bool: True if initialization successful (including fallback),
-                False only if both primary and fallback initialization fail.
-
+            bool: True if initialization successful, False if failed.
         """
+        if not user_rate_config.get("enabled", True):
+            logger.info("⏭️ User rate limiting disabled by configuration")
+            return True
+
         try:
-            logger.info("🛡️ Initializing rate limiter...")
+            logger.info("🛡️ Initializing user rate limiter...")
 
-            # Try with configured storage type first
-            storage_type = (
-                StorageType.MEMORY
-            )  # Default to memory for single-instance deployments
-
-            rate_limiter = await create_advanced_rate_limiter(
-                storage_type=storage_type, storage_config=storage_config
+            user_limiter = await create_user_rate_limiter(
+                max_requests=user_rate_config.get("max_requests", 100),
+                window_size=user_rate_config.get("window_size", 3600),
+                supabase_url=user_rate_config.get("supabase_url"),
+                supabase_key=user_rate_config.get("supabase_key"),
+                use_supabase=user_rate_config.get("use_supabase", True)
             )
 
-            # Test storage connection
-            if rate_limiter.storage:
-                storage_info = await rate_limiter.storage.get_info()
-                logger.info(
-                    "✅ Rate limiter initialized with %s storage",
-                    storage_info.get('backend_type', 'unknown'),
-                )
-            else:
-                logger.warning("⚠️ Rate limiter initialized without storage backend")
-                self.warnings.append("Rate limiter running without persistent storage")
+            status = user_limiter.get_status()
+            storage_type = status.get("storage", {}).get("backend_type", "unknown")
+            
+            logger.info(
+                "✅ User rate limiter initialized: %s/%ds per user, storage: %s",
+                user_rate_config.get("max_requests", 100),
+                user_rate_config.get("window_size", 3600),
+                storage_type
+            )
 
-            self.services["rate_limiter"] = rate_limiter
+            self.services["user_rate_limiter"] = user_limiter
             return True
 
         except Exception as e:
-            # Try fallback to memory storage
-            try:
-                logger.warning(
-                    "Primary rate limiter failed, attempting fallback: %s", e
-                )
-                fallback_limiter = await create_advanced_rate_limiter(
-                    storage_type=StorageType.MEMORY, storage_config={"max_size": 1000}
-                )
-
-                self.services["rate_limiter"] = fallback_limiter
-                self.warnings.append(
-                    f"Using fallback memory storage for rate limiter: {e}"
-                )
-                logger.info("✅ Rate limiter initialized with fallback memory storage")
-                return True
-
-            except Exception as fallback_error:
-                error_msg = (
-                    f"Rate limiter initialization failed completely: {fallback_error}"
-                )
-                logger.error("❌ %s", error_msg)
-                self.startup_errors.append(error_msg)
-                return False
+            error_msg = f"User rate limiter initialization failed: {e}"
+            logger.error("❌ %s", error_msg)
+            self.startup_errors.append(error_msg)
+            return False
 
     async def run_health_checks(self) -> Dict[str, Any]:
         """
@@ -142,32 +131,29 @@ class StartupManager:
         else:
             health_status["prediction_service"] = False
 
-        # Check rate limiter
-        if "rate_limiter" in self.services:
+        # Check user rate limiter
+        if "user_rate_limiter" in self.services:
             try:
-                limiter = self.services["rate_limiter"]
-                # Check if storage is accessible
-                if limiter.storage:
-                    health_status["rate_limiter"] = await limiter.storage.ping()
-                else:
-                    health_status[
-                        "rate_limiter"
-                    ] = True  # Memory storage always available
+                user_limiter = self.services["user_rate_limiter"]
+                status = user_limiter.get_status()
+                health_status["user_rate_limiter"] = status.get("initialized", False)
             except Exception:
-                health_status["rate_limiter"] = False
+                health_status["user_rate_limiter"] = False
         else:
-            health_status["rate_limiter"] = False
+            health_status["user_rate_limiter"] = False
 
         return health_status
 
-    async def startup(self, storage_config: Dict[str, Any]) -> Dict[str, Any]:
+    async def startup(
+        self, 
+        user_rate_config: Optional[Dict[str, Any]] = None
+    ) -> Dict[str, Any]:
         """
         Run all startup tasks with concurrent initialization.
 
         Args:
-            storage_config (Dict[str, Any]): Storage configuration dictionary
-                containing backend-specific settings for rate limiter storage,
-                connection parameters, timeouts, etc.
+            user_rate_config (Optional[Dict[str, Any]]): User rate limiting config
+                for JWT-based rate limiting. If None, user rate limiting is disabled.
 
         Returns:
             Dict[str, Any]: Comprehensive startup report containing:
@@ -184,8 +170,11 @@ class StartupManager:
         # Initialize services concurrently for better startup time
         tasks = [
             self.initialize_prediction_service(),
-            self.initialize_rate_limiter(storage_config),
         ]
+        
+        # Add user rate limiter if config provided
+        if user_rate_config and user_rate_config.get("enabled", False):
+            tasks.append(self.initialize_user_rate_limiter(user_rate_config))
 
         results = await asyncio.gather(*tasks, return_exceptions=True)
 
@@ -244,6 +233,17 @@ class StartupManager:
                     logger.info("✅ Rate limiter cleanup completed (memory storage)")
             except Exception as e:
                 error_msg = f"Rate limiter shutdown error: {e}"
+                logger.error("❌ %s", error_msg)
+                shutdown_errors.append(error_msg)
+
+        # Shutdown user rate limiter
+        if "user_rate_limiter" in self.services:
+            try:
+                user_limiter = self.services["user_rate_limiter"]
+                await user_limiter.shutdown()
+                logger.info("✅ User rate limiter shut down")
+            except Exception as e:
+                error_msg = f"User rate limiter shutdown error: {e}"
                 logger.error("❌ %s", error_msg)
                 shutdown_errors.append(error_msg)
 

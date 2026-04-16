@@ -24,7 +24,7 @@ class ApiMetadata:
 <li><strong>🤖 AI-Powered Detection</strong>: Advanced deep learning models for pneumonia detection</li>
 <li><strong>📊 Confidence Scoring</strong>: Detailed probability distributions and confidence levels</li>
 <li><strong>💡 Smart Recommendations</strong>: Medical recommendations based on AI predictions</li>
-<li><strong>🔒 Enterprise Security</strong>: Multi-layer security with advanced rate limiting</li>
+<li><strong>🔒 JWT Security</strong>: Native Supabase JWT authentication with per-user rate limiting</li>
 <li><strong>✅ Input Validation</strong>: Comprehensive file and image validation</li>
 <li><strong>📈 Real-time Monitoring</strong>: Request logging and performance tracking</li>
 </ul>
@@ -47,12 +47,12 @@ class ApiMetadata:
         return """
 <h3>🛡️ <strong>Security Features</strong></h3>
 <ul>
-<li><strong>Rate Limiting</strong>: 5 requests per minute per IP address</li>
+<li><strong>JWT Authentication</strong>: Supabase JWT (always enabled) for all endpoints</li>
+<li><strong>User Rate Limiting</strong>: 100 requests per hour per authenticated user</li>
 <li><strong>File Validation</strong>: Size (max 10MB) and type (JPG, JPEG, PNG) validation</li>
 <li><strong>Content Analysis</strong>: AI-powered image content validation</li>
 <li><strong>Duplicate Detection</strong>: Prevents repeated uploads of identical images</li>
-<li><strong>Request Monitoring</strong>: Comprehensive logging and attack detection</li>
-<li><strong>IP Protection</strong>: Multi-layer IP-based security measures</li>
+<li><strong>Request Monitoring</strong>: Comprehensive logging and tracking</li>
 </ul>
 """
 
@@ -107,8 +107,6 @@ class ApiMetadata:
 <ul>
 <li><strong>Health Check</strong>: <code>/</code> or <code>/health</code> - Service status and uptime</li>
 <li><strong>Model Info</strong>: <code>/pneumonia/model/info</code> - Detailed model information</li>
-<li><strong>Security Status</strong>: <code>/security/status</code> - Security system status</li>
-<li><strong>Security Stats</strong>: <code>/security/stats</code> - Detailed security metrics</li>
 </ul>
 """
 
@@ -159,10 +157,6 @@ class ApiMetadata:
             {
                 "name": "Model",
                 "description": "Machine learning model information and statistics",
-            },
-            {
-                "name": "Security",
-                "description": "Security status and protection metrics",
             },
         ]
 

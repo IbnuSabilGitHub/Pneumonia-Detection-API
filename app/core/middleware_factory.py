@@ -204,19 +204,16 @@ class MiddlewareFactory:
         return {
             "middleware_order": [
                 "Custom HTTP Middleware (error_handling, logging)",
-                "Security Middleware (rate limiting, attack detection)",
+                "Security Middleware (JWT auth + user rate limiting)",
                 "CORS Middleware",
                 "Trusted Host Middleware",
-                "SlowAPI Rate Limiting",
             ],
             "security_features": [
-                "Advanced rate limiting with IP switching detection",
-                "Request fingerprinting",
-                "Behavioral analysis",
-                "Global attack scoring",
+                "JWT authentication (Supabase, always enabled)",
+                "Per-user rate limiting with Supabase storage",
                 "File validation and duplicate detection",
             ],
             "cors_origins": settings.cors_origins,
             "trusted_hosts": settings.trusted_hosts,
-            "rate_limiting": "Hybrid (SlowAPI + Advanced Rate Limiter)",
+            "rate_limiting": "JWT User-Based Rate Limiting",
         }
