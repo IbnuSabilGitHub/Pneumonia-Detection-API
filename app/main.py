@@ -50,11 +50,6 @@ async def lifespan(_: FastAPI):
     # Inject dependencies
     if "prediction" in startup_result["services"]:
         dependencies.prediction_service = startup_result["services"]["prediction"]
-        # Also set in legacy global for backward compatibility
-        health.get_prediction_service.service = startup_result["services"]["prediction"]
-        prediction.get_prediction_service.service = startup_result["services"][
-            "prediction"
-        ]
 
     if "user_rate_limiter" in startup_result["services"]:
         dependencies.user_rate_limiter = startup_result["services"]["user_rate_limiter"]

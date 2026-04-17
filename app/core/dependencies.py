@@ -6,8 +6,8 @@ from functools import lru_cache
 from typing import Dict, Optional
 
 from ..services.prediction import PneumoniaPredictionService
-from .user_rate_limiting import UserRateLimiter
 from .logger import get_logger
+from .user_rate_limiting import UserRateLimiter
 
 logger = get_logger(__name__)
 
@@ -19,7 +19,7 @@ class AppDependencies:
     This replaces global variables with a proper dependency injection pattern.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         self._prediction_service: Optional[PneumoniaPredictionService] = None
         self._user_rate_limiter: Optional[UserRateLimiter] = None
         self._initialized = False
@@ -34,7 +34,7 @@ class AppDependencies:
         return self._prediction_service
 
     @prediction_service.setter
-    def prediction_service(self, service: PneumoniaPredictionService):
+    def prediction_service(self, service: PneumoniaPredictionService) -> None:
         """Set the prediction service instance
 
         Args:
@@ -42,10 +42,6 @@ class AppDependencies:
         """
         self._prediction_service = service
         logger.debug("Prediction service injected into dependencies")
-
-
-
-
 
     @property
     def user_rate_limiter(self) -> Optional[UserRateLimiter]:
@@ -57,7 +53,7 @@ class AppDependencies:
         return self._user_rate_limiter
 
     @user_rate_limiter.setter
-    def user_rate_limiter(self, limiter: UserRateLimiter):
+    def user_rate_limiter(self, limiter: UserRateLimiter) -> None:
         """Set the user-based rate limiter instance (JWT auth)
 
         Args:
@@ -85,12 +81,11 @@ class AppDependencies:
 
         Returns:
             Dict[str, bool]: Dictionary containing service availability status.
-                Keys: 'prediction_service', 'rate_limiter', 'user_rate_limiter', 'initialized'
+                Keys: 'prediction_service', 'user_rate_limiter', 'initialized'
                 Values: Boolean indicating if service is available/initialized
         """
         return {
             "prediction_service": self._prediction_service is not None,
-            "rate_limiter": self._rate_limiter is not None,
             "user_rate_limiter": self._user_rate_limiter is not None,
             "initialized": self._initialized,
         }
@@ -115,9 +110,6 @@ def get_prediction_service() -> Optional[PneumoniaPredictionService]:
             if it has been injected, None otherwise.
     """
     return get_dependencies().prediction_service
-
-
-
 
 
 def get_user_rate_limiter() -> Optional[UserRateLimiter]:

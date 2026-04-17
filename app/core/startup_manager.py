@@ -3,11 +3,11 @@ Startup manager for handling service initialization and lifecycle management.
 """
 
 import asyncio
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional
 
 from ..services.prediction import PneumoniaPredictionService
-from .user_rate_limiting import create_user_rate_limiter, UserRateLimiter
 from .logger import get_logger
+from .user_rate_limiting import create_user_rate_limiter
 
 logger = get_logger(__name__)
 
@@ -114,7 +114,6 @@ class StartupManager:
                 - healthy (bool): Overall health status
                 - services (Dict): Individual service health details
                 - prediction: Model loading and availability status
-                - rate_limiter: Storage connectivity and functionality
         """
         health_status = {}
 
@@ -122,10 +121,7 @@ class StartupManager:
         if "prediction" in self.services:
             try:
                 service = self.services["prediction"]
-                # Simple health check - verify model is loaded
-                health_status["prediction_service"] = (
-                    hasattr(service, "model") and service.model is not None
-                )
+                health_status["prediction_service"] = service.is_loaded()
             except Exception:
                 health_status["prediction_service"] = False
         else:
@@ -221,20 +217,6 @@ class StartupManager:
         logger.info("🛑 Shutting down services...")
 
         shutdown_errors = []
-
-        # Shutdown rate limiter
-        if "rate_limiter" in self.services:
-            try:
-                limiter = self.services["rate_limiter"]
-                if limiter.storage and hasattr(limiter.storage, "disconnect"):
-                    await limiter.storage.disconnect()
-                    logger.info("✅ Rate limiter storage disconnected")
-                else:
-                    logger.info("✅ Rate limiter cleanup completed (memory storage)")
-            except Exception as e:
-                error_msg = f"Rate limiter shutdown error: {e}"
-                logger.error("❌ %s", error_msg)
-                shutdown_errors.append(error_msg)
 
         # Shutdown user rate limiter
         if "user_rate_limiter" in self.services:

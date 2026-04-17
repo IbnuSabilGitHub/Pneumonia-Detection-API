@@ -44,7 +44,7 @@ class SecurityMiddleware(BaseHTTPMiddleware):
             "yes",
         )
 
-    async def dispatch(self, request, call_next):
+    async def dispatch(self, request: Request, call_next):
         start_time = time.time()
         client_ip = get_client_ip(request)
         # If multiple IPs in X-Forwarded-For and trust_proxy disabled, take last (direct peer) for stricter behavior
@@ -80,8 +80,11 @@ class SecurityMiddleware(BaseHTTPMiddleware):
             # Log successful request
             process_time = time.time() - start_time
             self.logger.info(
-                f"{endpoint} | IP: {client_ip} | "
-                f"Status: {response.status_code} | Time: {process_time:.3f}s"
+                "%s | IP: %s | Status: %d | Time: %.3fs",
+                endpoint,
+                client_ip,
+                response.status_code,
+                process_time,
             )
 
             # Add security headers
@@ -114,7 +117,10 @@ class SecurityMiddleware(BaseHTTPMiddleware):
 
         except Exception as e:
             self.logger.error(
-                f"Request failed: {str(e)} | IP: {client_ip} | Endpoint: {endpoint}"
+                "Request failed: %s | IP: %s | Endpoint: %s",
+                e,
+                client_ip,
+                endpoint,
             )
             raise
 
@@ -122,14 +128,14 @@ class SecurityMiddleware(BaseHTTPMiddleware):
         """Check if endpoint should skip rate limiting."""
         return path in getattr(settings, "excluded_paths", [])
 
-    def _extract_file_hash(self, request) -> str:
+    def _extract_file_hash(self, request: Request) -> Optional[str]:
         """Extract file hash for upload endpoints."""
         if request.url.path == "/pneumonia/predict" and request.method == "POST":
             return getattr(request.state, "file_hash", None)
         return None
 
     async def _check_rate_limit(
-        self, client_ip: str, endpoint: str, request, file_hash: str
+        self, client_ip: str, endpoint: str, request: Request, file_hash: Optional[str]
     ) -> dict:
         """Check rate limiting and return result.
         
@@ -162,7 +168,7 @@ class SecurityMiddleware(BaseHTTPMiddleware):
                 return payload.user_id
             return None
         except Exception as e:
-            self.logger.debug(f"Failed to extract user_id from JWT: {e}")
+            self.logger.debug("Failed to extract user_id from JWT: %s", e)
             return None
 
     async def _check_user_rate_limit(self, request: Request) -> Optional[dict]:
@@ -215,11 +221,11 @@ class SecurityMiddleware(BaseHTTPMiddleware):
                 }
         
         except Exception as e:
-            self.logger.error(f"User rate limit check failed: {e}")
+            self.logger.error("User rate limit check failed: %s", e)
             return None  # Fall back to IP-based
 
     async def _check_ip_rate_limit(
-        self, client_ip: str, endpoint: str, request, file_hash: str
+        self, client_ip: str, endpoint: str, request: Request, file_hash: Optional[str]
     ) -> dict:
         """Check IP-based rate limiting (legacy method)."""
         # Import at runtime to get the latest reference
@@ -267,7 +273,9 @@ class SecurityMiddleware(BaseHTTPMiddleware):
         except Exception as e:
             # If rate limiting fails, log error but allow request to proceed
             self.logger.error(
-                f"Rate limiting check failed: {e} | IP: {client_ip} | Allowing request"
+                "Rate limiting check failed: %s | IP: %s | Allowing request",
+                e,
+                client_ip,
             )
             return {
                 "allowed": True,
@@ -283,7 +291,11 @@ class SecurityMiddleware(BaseHTTPMiddleware):
         details = rate_limit_result["details"]
 
         self.logger.warning(
-            f"Request blocked: {reason} | IP: {client_ip} | Endpoint: {endpoint} | Details: {details}"
+            "Request blocked: %s | IP: %s | Endpoint: %s | Details: %s",
+            reason,
+            client_ip,
+            endpoint,
+            details,
         )
 
         error_detail = {
@@ -450,7 +462,7 @@ class SecurityMiddleware(BaseHTTPMiddleware):
 
         except Exception as e:
             # Don't break the response if header addition fails
-            self.logger.debug(f"Failed to add rate limit headers: {e}")
+            self.logger.debug("Failed to add rate limit headers: %s", e)
 
 
 async def logging_middleware(request: Request, call_next):
@@ -496,26 +508,19 @@ async def error_handling_middleware(request: Request, call_next):
     Returns:
         Response or error response
     """
-    # Debug specific paths
     if "/pneumonia/model/info" in request.url.path:
-        print(f"[DEBUG] Processing model/info request", flush=True)
-    
+        logger.debug("Processing model/info request")
+
     try:
         response = await call_next(request)
         return response
     except HTTPException as e:
-        # Re-raise HTTP exceptions (they're handled by FastAPI)  
         if "/pneumonia/model/info" in request.url.path:
-            print(f"[DEBUG] HTTPException: {e}", flush=True)
+            logger.debug("HTTPException in model/info request: %s", e)
         raise
     except Exception as e:
-        # Log unexpected errors with debug info
-        import sys
-        import traceback
         error_msg = f"Unexpected error in {request.url.path}: {type(e).__name__}: {e}"
-        print(f"[DEBUG] {error_msg}", file=sys.stderr, flush=True)
-        traceback.print_exc(file=sys.stderr)
-        logger.error("Unexpected error: %s", e, exc_info=True)
+        logger.error("%s", error_msg, exc_info=True)
 
         return JSONResponse(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
