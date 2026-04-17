@@ -31,5 +31,14 @@ def custom_openapi(app):
         },
     }
 
+    # Add security requirement to protected endpoints
+    paths = schema.get("paths", {})
+    for path_item in paths.values():
+        for operation in path_item.values():
+            if isinstance(operation, dict):
+                # Add security to the predict endpoint and other protected endpoints
+                if "operationId" in operation and "predict" in operation.get("operationId", "").lower():
+                    operation["security"] = [{"SupabaseJWT": []}]
+
     app.openapi_schema = schema
     return app.openapi_schema
